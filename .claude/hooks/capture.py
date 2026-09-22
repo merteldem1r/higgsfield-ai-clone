@@ -8,6 +8,8 @@ Wired from .claude/settings.json:
 
 Entries are append-only; only the front-matter header is regenerated (counts/times).
 Never blocks Claude Code: every failure is swallowed and written to ~/.claude/capture-errors.log.
+Model strings are normalized to the bare API id (e.g. "claude-opus-5[1m]" -> "claude-opus-5") so
+PROMPT and RESPONSE entries agree whether the model came from SessionStart or the transcript.
 """
 import datetime
 import glob
@@ -47,15 +49,20 @@ def read_transcript(path):
     return entries
 
 
+def normalize_model(m):
+    """Drop a trailing variant tag such as "[1m]" so every entry uses the bare API model id."""
+    return re.sub(r"\[[^\]]*\]$", "", (m or "").strip()) or "unknown"
+
+
 def last_model(entries, sid):
     for e in reversed(entries):
         if e.get("type") == "assistant" and not e.get("isSidechain"):
             m = (e.get("message") or {}).get("model")
             if m and m != "<synthetic>":
-                return m
+                return normalize_model(m)
     try:
         with open(model_cache(sid)) as f:
-            return f.read().strip() or "unknown"
+            return normalize_model(f.read())
     except OSError:
         return "unknown"
 
