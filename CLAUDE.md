@@ -39,12 +39,16 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 - **Tokens, type, components, states, motion:** `docs/DESIGN.md`.
 - Read the relevant one before starting a task. Don't restate them here.
 
-**Stack.** These are the latest stable versions on npm as of 2026-09-22. Replace them with what `package.json` actually has after scaffolding.
-- Next.js 16 (App Router), React 19, TypeScript (strict).
-- Tailwind CSS 4.
-- Supabase: `@supabase/supabase-js` 2.x and `@supabase/ssr` 0.12 for anonymous auth, Postgres and Storage.
-- fal.ai: `@fal-ai/client` 1.x, with Flux Schnell plus one premium model.
+**Stack.** Installed versions from `package.json` (scaffolded with `create-next-app@16.3.6`, Turbopack).
+- Next.js 16.3.6 (App Router, `src/` dir), React 19.2.8, TypeScript 5.9 (strict), ESLint 9 with `eslint-config-next`.
+- Tailwind CSS 4.3 via `@tailwindcss/postcss`. There's no `tailwind.config`; tokens live in `@theme` in `src/app/globals.css`.
+- Supabase: `@supabase/supabase-js` 2.x and `@supabase/ssr` 0.12 for anonymous auth, Postgres and Storage. _Not installed yet (step 1)._
+- fal.ai: `@fal-ai/client` 1.x, with Flux Schnell plus one premium model. _Not installed yet (step 1)._
 - Hosted on Vercel.
+
+**Env vars.** Names live in `.env.example`; values live in `.env.local` locally and in Vercel project settings for deploys.
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: public, safe in the browser bundle.
+- `SUPABASE_SERVICE_ROLE_KEY`, `FAL_KEY`: server-only. Never `NEXT_PUBLIC_`, never imported into client code.
 
 **Rules that must not be broken**
 - The fal key (`FAL_KEY`) is only read on the server. No fal client proxy, no browser calls to fal.
@@ -53,7 +57,33 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 - RLS is enabled on every table. **Anonymous users get the `authenticated` role, so "authenticated can do X" means "any visitor can do X".** Write policies with that in mind, scoping them to `auth.uid() = user_id`.
 - No Higgsfield logos, photos or video. Showcase and empty-state images come from our own generations.
 
-**Folder structure:** _placeholder. Replace this with the real tree after scaffolding._
+**Folder structure** (as of step 0; update when top-level folders change):
+```
+.
+├── .agent-logs/          # capture-hook output, append-only, committed
+├── .claude/              # settings.json + hooks/capture.py
+├── docs/
+│   ├── ASSIGNMENT.md
+│   ├── PLAN.md           # scope, build order, data model, credit rules
+│   ├── DESIGN.md         # tokens, type, components, states, motion
+│   └── recon/            # notes.md + screenshots/ of the original
+├── src/
+│   └── app/
+│       ├── globals.css   # Tailwind import + @theme design tokens
+│       ├── layout.tsx    # next/font: Barlow Condensed 800 + Inter
+│       ├── page.tsx      # placeholder home
+│       └── favicon.ico
+├── .env.example          # env var names, no values
+├── .env.local            # real values, gitignored
+├── eslint.config.mjs
+├── next.config.ts
+├── package.json / package-lock.json
+├── postcss.config.mjs
+├── tsconfig.json         # strict, "@/*" → ./src/*
+├── CAPTURE-TEST.md
+└── CLAUDE.md
+```
+Expected additions: `src/app/api/generate/route.ts`, `src/lib/` (server-only Supabase + fal modules, credit constants), `supabase/migrations/`, `src/components/` for cross-route pieces only.
 
 ## Priorities, when they conflict
 

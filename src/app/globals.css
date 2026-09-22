@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* Design tokens from docs/DESIGN.md §1–2. This is the only place raw color values live. */
+@theme {
+  /* Drop Tailwind's default palette so only design tokens compile. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* surfaces, darkest → lightest */
+  --color-bg-0: #0f1113;
+  --color-bg-1: #131517;
+  --color-bg-2: #1c1e20;
+  --color-bg-3: #1f2123;
+  --color-bg-4: #23262b;
+  --color-bg-5: #2e3135;
+  --color-chip: #222222;
+  --color-tabbar: #0b0c0e;
+  --color-overlay: rgb(0 0 0 / 0.8);
+
+  /* borders */
+  --color-border-1: #1f2123;
+  --color-border-2: #26292b;
+  --color-border-3: #2b2c2e;
+
+  /* text */
+  --color-text-1: #ffffff;
+  --color-text-2: #898a8b;
+  --color-text-3: #737475;
+  --color-text-placeholder: #a0a1a2;
+  --color-text-disabled: #57595a;
+
+  /* primary lime */
+  --color-lime: #d1fe17;
+  --color-lime-hover: #e2ff3a;
+  --color-lime-disabled: #b0d328;
+  --color-lime-lip: #7d980e;
+  --color-lime-ink: #0f1113;
+  --color-lime-tint: #262c1b;
+  --color-lime-tint-2: #2d3522;
+  --color-lime-badge-bg: #36411b;
+
+  /* promo + badges */
+  --color-pink: #ee1572;
+  --color-pink-hot: #ff005b;
+  --color-magenta: #fa4ae6;
+  --color-blue: #2663eb;
+  --color-blue-offer: #3352e9;
+  --color-sky: #2a97f3;
+  --color-purple: #830eff;
+  --color-gold: #e9d7a2;
+
+  /* shape: replaces Tailwind's radius scale, so rounded-lg = 12px here */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+
+  /* spacing: Tailwind's default --spacing (0.25rem = 4px) already matches --s-*, e.g. p-4 = 16px */
+
+  /* elevation */
+  --inset-shadow-lip: inset 0 -3px 0 rgb(0 0 0 / 0.4);
+  --shadow-float: 0 12px 40px rgb(0 0 0 / 0.5);
+  --shadow-modal: 0 24px 80px rgb(0 0 0 / 0.6);
+  --shadow-focus: 0 0 0 2px var(--color-bg-0), 0 0 0 4px var(--color-lime);
+
+  /* motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* type roles; body (14/20) and small (12/16) are Tailwind's text-sm and text-xs */
+  --text-display: 48px;
+  --text-display--line-height: 44px;
+  --text-display-sm: 34px;
+  --text-display-sm--line-height: 32px;
+  --text-h2: 30px;
+  --text-h2--line-height: 30px;
+  --text-h2--letter-spacing: 0.005em;
+  --text-h3: 22px;
+  --text-h3--line-height: 24px;
+  --text-h3--letter-spacing: 0.01em;
+  --text-title: 28px;
+  --text-title--line-height: 34px;
+  --text-title--letter-spacing: -0.02em;
+}
+
+/* inline: these point at the variables next/font sets on <html> */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-bg-0);
+    color: var(--color-text-1);
+  }
+}
