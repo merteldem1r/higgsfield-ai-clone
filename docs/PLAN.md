@@ -75,7 +75,13 @@ app_budget   singleton: total_spent_usd · total_cap_usd (9.00) · day · day_sp
   2. A per-IP cap of 30 images per day, counted from `generations.ip_hash` and set by the `IP_DAILY_LIMIT` env var.
   3. The app budget: $5/day and $9 total.
   4. The prepaid $10 fal balance, which is the hard ceiling.
-- **Error handling in the UI:** a `FAL_DISABLED` env kill switch returns 503. `INSUFFICIENT_CREDITS` opens the auth modal (or Pricing if the user is signed in). `GLOBAL_CAP` shows a "demo budget reached for today" banner.
+- **Error codes from `/api/generate`** (the UI surfaces are in DESIGN.md → Error surfaces):
+  - `INSUFFICIENT_CREDITS` (402): opens the auth modal, or Pricing if the user is signed in.
+  - `GLOBAL_CAP` (503): notice bar, "demo budget reached for today".
+  - `FAL_DISABLED` (503): env kill switch; notice bar.
+  - `IP_LIMIT` (429): the per-IP daily cap (`IP_DAILY_LIMIT`); notice bar.
+  - Provider failure (502): failed tile, credits refunded.
+  - Only provider failure charges and then refunds. The other codes reject the request before any credits are spent.
 
 ## 5. Build order (hours are rough)
 
