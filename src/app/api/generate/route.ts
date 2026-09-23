@@ -124,13 +124,17 @@ export async function POST(request: Request) {
     const complete = completed as CompleteResult;
     if (!complete.ok) throw new Error(`complete_generation: ${complete.code}`);
 
+    const ids = await assetIds(admin, generationId);
+
     return NextResponse.json({
       generationId,
       credits: complete.credits,
       images: assets.map((asset) => ({
+        id: ids.get(asset.storage_path),
         url: admin.storage.from(BUCKET).getPublicUrl(asset.storage_path).data.publicUrl,
         width: asset.width,
         height: asset.height,
+        favourite: false,
       })),
     });
   } catch (err) {
@@ -145,6 +149,14 @@ export async function POST(request: Request) {
     }
     return errorResponse(502, "PROVIDER_ERROR", "Generation failed. Your credits were refunded.");
   }
+}
+
+// Only the favourite heart needs these. The generation has already succeeded and been charged,
+// so a failed lookup must not reach the catch below; the images just come back without a heart.
+async function assetIds(admin: ReturnType<typeof createAdminClient>, generationId: string) {
+  const { data, error } = await admin.from("assets").select("id, storage_path").eq("generation_id", generationId);
+  if (error) console.error("Reading asset ids failed", generationId, error);
+  return new Map((data ?? []).map((row: { id: string; storage_path: string }) => [row.storage_path, row.id]));
 }
 
 async function copyToStorage(

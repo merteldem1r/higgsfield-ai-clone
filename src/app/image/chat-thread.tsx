@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 
 import { LogoMark, ReuseIcon, SparkleIcon } from "@/components/icons";
-import { Lightbox, type LightboxItem } from "@/components/lightbox";
+import { Lightbox } from "@/components/lightbox";
 import { MODELS } from "@/lib/credits";
 
 import { followUps, introLine, outroLine, rejectionLine } from "./assistant-lines";
@@ -20,12 +20,16 @@ type Props = {
   /** Loads a prompt + settings into the composer without generating. */
   onLoad: (request: GenerateRequest) => void;
   onRetry: (run: Run) => void;
+  onFavourite: (image: RunImage, favourite: boolean) => void;
   onSignUp: () => void;
   retryDisabled: boolean;
 };
 
-export function ChatThread({ runs, onLoad, onRetry, onSignUp, retryDisabled }: Props) {
-  const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
+export function ChatThread({ runs, onLoad, onRetry, onFavourite, onSignUp, retryDisabled }: Props) {
+  // A reference, not a snapshot, so a heart clicked inside the lightbox shows the live value.
+  const [lightbox, setLightbox] = useState<{ runId: string; url: string } | null>(null);
+  const lightboxRun = lightbox ? runs.find((run) => run.id === lightbox.runId) : undefined;
+  const lightboxImage = lightboxRun?.images.find((image) => image.url === lightbox?.url);
   const reduced = usePrefersReducedMotion();
   const listRef = useRef<HTMLOListElement>(null);
   useStickToBottom(listRef);
@@ -43,7 +47,8 @@ export function ChatThread({ runs, onLoad, onRetry, onSignUp, retryDisabled }: P
               run={run}
               latest={i === ordered.length - 1}
               animate={run.live && !reduced}
-              onOpen={(image) => setLightbox({ image, prompt: run.request.prompt })}
+              onOpen={(image) => setLightbox({ runId: run.id, url: image.url })}
+              onFavourite={onFavourite}
               onLoad={onLoad}
               onRetry={() => onRetry(run)}
               onSignUp={onSignUp}
@@ -52,7 +57,15 @@ export function ChatThread({ runs, onLoad, onRetry, onSignUp, retryDisabled }: P
           </li>
         ))}
       </ol>
-      <Lightbox item={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox
+        item={lightboxRun && lightboxImage ? { image: lightboxImage, prompt: lightboxRun.request.prompt } : null}
+        onClose={() => setLightbox(null)}
+        favourite={
+          lightboxImage?.id
+            ? { value: lightboxImage.favourite, onChange: (favourite) => onFavourite(lightboxImage, favourite) }
+            : undefined
+        }
+      />
     </>
   );
 }
@@ -104,6 +117,7 @@ function AssistantTurn({
   latest,
   animate,
   onOpen,
+  onFavourite,
   onLoad,
   onRetry,
   onSignUp,
@@ -113,6 +127,7 @@ function AssistantTurn({
   latest: boolean;
   animate: boolean;
   onOpen: (image: RunImage) => void;
+  onFavourite: (image: RunImage, favourite: boolean) => void;
   onLoad: (request: GenerateRequest) => void;
   onRetry: () => void;
   onSignUp: () => void;
@@ -138,7 +153,13 @@ function AssistantTurn({
         <StreamedText text={introLine(run)} animate={animate} onDone={() => setIntroDone(true)} />
 
         {introDone && !rejected && (
-          <RunMedia run={run} onOpen={onOpen} onRetry={onRetry} retryDisabled={retryDisabled} />
+          <RunMedia
+            run={run}
+            onOpen={onOpen}
+            onFavourite={onFavourite}
+            onRetry={onRetry}
+            retryDisabled={retryDisabled}
+          />
         )}
 
         {introDone && settled && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { FavouriteButton } from "@/components/favourite-button";
 import { AlertIcon, DownloadIcon, SparkleIcon } from "@/components/icons";
 import { MODELS, type AspectId } from "@/lib/credits";
 import { download } from "@/lib/download";
@@ -38,11 +39,13 @@ const GLOW_PHASE = ["", "[animation-delay:-1.75s]", "[animation-delay:-3.5s]", "
 export function RunMedia({
   run,
   onOpen,
+  onFavourite,
   onRetry,
   retryDisabled,
 }: {
   run: Run;
   onOpen: (image: RunImage) => void;
+  onFavourite: (image: RunImage, favourite: boolean) => void;
   onRetry: () => void;
   retryDisabled: boolean;
 }) {
@@ -73,6 +76,7 @@ export function RunMedia({
             phase={GLOW_PHASE[i]}
             fileName={`image-${run.id.slice(0, 8)}-${i + 1}.jpg`}
             onOpen={() => onOpen(image)}
+            onFavourite={(favourite) => onFavourite(image, favourite)}
           />
         ))}
     </div>
@@ -168,6 +172,7 @@ function ImageTile({
   phase,
   fileName,
   onOpen,
+  onFavourite,
 }: {
   className: string;
   image: RunImage;
@@ -175,6 +180,7 @@ function ImageTile({
   phase: string;
   fileName: string;
   onOpen: () => void;
+  onFavourite: (favourite: boolean) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
 
@@ -195,6 +201,9 @@ function ImageTile({
       <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/6 ring-inset" />
       <button type="button" onClick={onOpen} aria-label="Open image" className="absolute inset-0 cursor-zoom-in" />
       <div className="pointer-events-none absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+        {image.id && (
+          <FavouriteButton favourite={image.favourite} onChange={onFavourite} className="pointer-events-auto size-8" />
+        )}
         <button type="button" onClick={() => void download(image.url, fileName)} aria-label="Download" className={ICON_BUTTON}>
           <DownloadIcon className="size-4" />
         </button>

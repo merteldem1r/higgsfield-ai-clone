@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "@/components/app-provider";
 import { stashDraft } from "@/components/composer/handoff";
 import { FannedStack } from "@/components/fanned-stack";
+import { FavouriteButton, useFavourite } from "@/components/favourite-button";
 import {
   AudioIcon,
   BoxIcon,
@@ -20,7 +21,7 @@ import {
   VideoIcon,
   XIcon,
 } from "@/components/icons";
-import { Lightbox, type LightboxItem } from "@/components/lightbox";
+import { Lightbox } from "@/components/lightbox";
 import { DEFAULT_ASPECT, DEFAULT_MODEL, isAspectId, isModelId, type AspectId, type ModelId } from "@/lib/credits";
 import { download } from "@/lib/download";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ type AssetRow = {
   storage_path: string;
   width: number | null;
   height: number | null;
+  favourite: boolean;
   created_at: string;
   generations: { prompt: string; model: string; aspect: string } | null;
 };
@@ -45,9 +47,12 @@ type Asset = {
   prompt: string;
   model: ModelId;
   aspect: AspectId;
+  favourite: boolean;
 };
 
-type Filter = "all" | "image";
+type Filter = "all" | "favourites" | "image";
+
+const TITLES: Record<Filter, string> = { all: "All assets", favourites: "Favourites", image: "Images" };
 
 // Mobile is always 2 columns; the slider sets the widest breakpoint's count. Full strings for Tailwind.
 const COLUMNS: Record<number, string> = {
@@ -76,7 +81,7 @@ async function loadAssets(): Promise<Asset[]> {
 
   const { data, error } = await supabase
     .from("assets")
-    .select("id, storage_path, width, height, created_at, generations(prompt, model, aspect)")
+    .select("id, storage_path, width, height, favourite, created_at, generations(prompt, model, aspect)")
     .order("created_at", { ascending: false })
     .limit(LIMIT);
   if (error) throw error;
@@ -89,6 +94,7 @@ async function loadAssets(): Promise<Asset[]> {
     prompt: row.generations?.prompt ?? "",
     model: isModelId(row.generations?.model) ? row.generations.model : DEFAULT_MODEL,
     aspect: isAspectId(row.generations?.aspect) ? row.generations.aspect : DEFAULT_ASPECT,
+    favourite: row.favourite,
   }));
 }
 
@@ -101,7 +107,11 @@ export function AssetsBrowser() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [columns, setColumns] = useState(4);
-  const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
+  // An id, not a snapshot, so a heart clicked inside the lightbox shows the live value.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const setFavourite = useFavourite((id, favourite) =>
+    setAssets((current) => current?.map((a) => (a.id === id ? { ...a, favourite } : a)) ?? null),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -119,8 +129,12 @@ export function AssetsBrowser() {
   }, [attempt]);
 
   const count = assets?.length ?? null;
+  const favourites = assets?.filter((a) => a.favourite) ?? [];
+  // Unhearting in the Favourites view drops the tile straight away; a failed save brings it back.
+  const base = filter === "favourites" ? favourites : (assets ?? []);
   const needle = query.trim().toLowerCase();
-  const visible = (assets ?? []).filter((a) => !needle || a.prompt.toLowerCase().includes(needle));
+  const visible = base.filter((a) => !needle || a.prompt.toLowerCase().includes(needle));
+  const open = assets?.find((a) => a.id === openId) ?? null;
 
   function reuse(asset: Asset) {
     // A draft only fills the composer on /image; it never starts a generation.
@@ -153,7 +167,13 @@ export function AssetsBrowser() {
           <nav aria-label="Library" className="flex flex-col gap-4">
             <ul className="flex gap-1 max-lg:overflow-x-auto lg:flex-col">
               <SidebarItem icon={<BoxIcon />} label="Assets" count={count} active={filter === "all"} onClick={() => setFilter("all")} />
-              <SidebarItem icon={<HeartIcon />} label="Favourites" soon />
+              <SidebarItem
+                icon={<HeartIcon />}
+                label="Favourites"
+                count={assets ? favourites.length : null}
+                active={filter === "favourites"}
+                onClick={() => setFilter("favourites")}
+              />
             </ul>
             <div className="max-lg:hidden">
               <p className="px-2.5 pb-1.5 text-xs font-medium text-text-3">Tools</p>
@@ -189,11 +209,11 @@ export function AssetsBrowser() {
         <div className="mb-4 flex min-h-10 items-center justify-between gap-4">
           <div className="flex items-baseline gap-2.5">
             <h1 id="assets-title" className="text-xl font-semibold tracking-[-0.01em]">
-              {filter === "all" ? "All assets" : "Images"}
+              {TITLES[filter]}
             </h1>
-            {count !== null && count > 0 && (
+            {base.length > 0 && (
               <span className="text-sm text-text-2 tabular-nums">
-                {needle ? `${visible.length} of ${count}` : count} {count === 1 ? "image" : "images"}
+                {needle ? `${visible.length} of ${base.length}` : base.length} {base.length === 1 ? "image" : "images"}
               </span>
             )}
           </div>
@@ -241,6 +261,13 @@ export function AssetsBrowser() {
               Generate
             </Link>
           </State>
+        ) : base.length === 0 ? (
+          <State title="No favourites yet" text="Tap the heart on any image to keep it here.">
+            <button type="button" onClick={() => setFilter("all")} className={WHITE_BUTTON}>
+              <BoxIcon className="size-4" />
+              Show all assets
+            </button>
+          </State>
         ) : visible.length === 0 ? (
           <State title="No images match that search" text={`Nothing in your prompts contains "${query.trim()}".`}>
             <button type="button" onClick={() => setQuery("")} className={WHITE_BUTTON}>
@@ -254,15 +281,24 @@ export function AssetsBrowser() {
               <AssetTile
                 key={asset.id}
                 asset={asset}
-                onOpen={() => setLightbox({ image: asset, prompt: asset.prompt })}
+                onOpen={() => setOpenId(asset.id)}
                 onReuse={() => reuse(asset)}
+                onFavourite={(favourite) => void setFavourite(asset.id, favourite, asset.favourite)}
               />
             ))}
           </ul>
         )}
       </section>
 
-      <Lightbox item={lightbox} onClose={() => setLightbox(null)} />
+      <Lightbox
+        item={open && { image: open, prompt: open.prompt }}
+        onClose={() => setOpenId(null)}
+        favourite={
+          open
+            ? { value: open.favourite, onChange: (favourite) => void setFavourite(open.id, favourite, open.favourite) }
+            : undefined
+        }
+      />
     </>
   );
 }
@@ -342,7 +378,17 @@ function State({
 const TILE_BUTTON =
   "pointer-events-auto flex h-8 items-center gap-1.5 rounded-md bg-black/50 px-2.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors duration-150 hover:bg-black/75";
 
-function AssetTile({ asset, onOpen, onReuse }: { asset: Asset; onOpen: () => void; onReuse: () => void }) {
+function AssetTile({
+  asset,
+  onOpen,
+  onReuse,
+  onFavourite,
+}: {
+  asset: Asset;
+  onOpen: () => void;
+  onReuse: () => void;
+  onFavourite: (favourite: boolean) => void;
+}) {
   const [loaded, setLoaded] = useState(false);
   const sized = asset.width !== null && asset.height !== null;
 
@@ -362,6 +408,14 @@ function AssetTile({ asset, onOpen, onReuse }: { asset: Asset; onOpen: () => voi
           } ${loaded ? "opacity-100" : "opacity-0"}`}
         />
         <button type="button" onClick={onOpen} aria-label="Open image" className="absolute inset-0 cursor-zoom-in" />
+        {/* A hearted image keeps its heart showing, so favourites are visible at a glance in "All assets". */}
+        <div
+          className={`absolute top-2 right-2 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 ${
+            asset.favourite ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <FavouriteButton favourite={asset.favourite} onChange={onFavourite} className="size-8" />
+        </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2.5 bg-linear-to-t from-black/85 via-black/45 to-transparent p-3 pt-12 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:bg-none pointer-coarse:pt-3 pointer-coarse:opacity-100">
           <p className="line-clamp-2 text-xs leading-4 text-white/90 pointer-coarse:hidden">{asset.prompt}</p>
           <div className="flex gap-1.5">

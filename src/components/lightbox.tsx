@@ -2,11 +2,21 @@
 
 import { useEffect, useRef } from "react";
 
+import { FavouriteButton } from "./favourite-button";
 import { XIcon } from "./icons";
 
 export type LightboxItem = { image: { url: string }; prompt: string };
 
-export function Lightbox({ item, onClose }: { item: LightboxItem | null; onClose: () => void }) {
+export function Lightbox({
+  item,
+  onClose,
+  favourite,
+}: {
+  item: LightboxItem | null;
+  onClose: () => void;
+  /** Omitted when the image has no asset id to save against. */
+  favourite?: { value: boolean; onChange: (favourite: boolean) => void };
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -36,6 +46,14 @@ export function Lightbox({ item, onClose }: { item: LightboxItem | null; onClose
           />
           <figcaption className="max-w-[92vw] text-center text-sm text-text-2 sm:max-w-2xl">{item.prompt}</figcaption>
         </figure>
+      )}
+      {item && favourite && (
+        <FavouriteButton
+          favourite={favourite.value}
+          onChange={favourite.onChange}
+          tone="solid"
+          className="fixed top-4 right-14 size-8"
+        />
       )}
       <button
         type="button"

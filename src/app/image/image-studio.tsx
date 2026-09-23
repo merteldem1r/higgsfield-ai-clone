@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/components/app-provider";
 import { Composer, type ComposerHandle } from "@/components/composer/composer";
 import { takeStashedDraft, takeStashedGeneration } from "@/components/composer/handoff";
+import { useFavourite } from "@/components/favourite-button";
 import { SparkleIcon } from "@/components/icons";
 import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
 import { createClient } from "@/lib/supabase/client";
@@ -35,7 +36,7 @@ type HistoryRow = {
   batch: number;
   created_at: string;
   completed_at: string | null;
-  assets: { storage_path: string; width: number | null; height: number | null }[];
+  assets: { id: string; storage_path: string; width: number | null; height: number | null; favourite: boolean }[];
 };
 
 async function loadHistory(): Promise<Run[]> {
@@ -45,7 +46,7 @@ async function loadHistory(): Promise<Run[]> {
 
   const { data, error } = await supabase
     .from("generations")
-    .select("id, prompt, model, aspect, batch, created_at, completed_at, assets(storage_path, width, height)")
+    .select("id, prompt, model, aspect, batch, created_at, completed_at, assets(id, storage_path, width, height, favourite)")
     .eq("status", "succeeded")
     .order("created_at", { ascending: false })
     .limit(HISTORY_LIMIT);
@@ -69,9 +70,11 @@ async function loadHistory(): Promise<Run[]> {
         images: row.assets
           .toSorted((a, b) => a.storage_path.localeCompare(b.storage_path))
           .map((asset) => ({
+            id: asset.id,
             url: supabase.storage.from(BUCKET).getPublicUrl(asset.storage_path).data.publicUrl,
             width: asset.width,
             height: asset.height,
+            favourite: asset.favourite,
           })),
       },
     ];
@@ -112,6 +115,16 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollToNewest.current });
     scrollToNewest.current = null;
   }, [runs]);
+
+  const setFavourite = useFavourite((assetId, favourite) =>
+    setRuns((current) =>
+      current.map((run) =>
+        run.images.some((image) => image.id === assetId)
+          ? { ...run, images: run.images.map((image) => (image.id === assetId ? { ...image, favourite } : image)) }
+          : run,
+      ),
+    ),
+  );
 
   const updateRun = (id: string, patch: Partial<Run>) =>
     setRuns((current) => current.map((run) => (run.id === id ? { ...run, ...patch } : run)));
@@ -240,6 +253,9 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
             runs={runs}
             onLoad={loadIntoComposer}
             onRetry={retryRun}
+            onFavourite={(image, favourite) => {
+              if (image.id) void setFavourite(image.id, favourite, image.favourite);
+            }}
             onSignUp={() => openAuthModal("signup")}
             retryDisabled={inFlight || blocked}
           />

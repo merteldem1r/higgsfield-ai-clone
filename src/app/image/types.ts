@@ -2,7 +2,8 @@ import type { GenerateRequest } from "@/components/composer/types";
 
 export type { GenerateRequest };
 
-export type RunImage = { url: string; width: number | null; height: number | null };
+// id is missing only if the server couldn't read it back after saving; that image just shows no heart.
+export type RunImage = { id?: string; url: string; width: number | null; height: number | null; favourite: boolean };
 
 // One click of Generate, rendered as one chat turn: the user's bubble, then the assistant's reply.
 // "rejected" means the API turned it down before spending (budget, IP limit, credits, network).
