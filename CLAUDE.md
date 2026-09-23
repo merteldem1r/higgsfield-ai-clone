@@ -77,16 +77,19 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 ├── src/
 │   ├── app/
 │   │   ├── api/generate/route.ts  # POST: auth → start_generation → fal → Storage → complete
-│   │   ├── _home/        # / sections: carousel, hero composer, showcase grid, presets, footer
-│   │   ├── image/        # /image: studio, results grid, notice bar, lightbox
+│   │   ├── _home/        # / sections: carousel, hero composer, showcase grid, presets
+│   │   ├── assets/       # /assets: the visitor's gallery (RLS-scoped reads), search, grid slider
+│   │   ├── image/        # /image: chat thread, assistant lines, run media, ambient background
+│   │   ├── pricing/      # /pricing: plan cards (UI only), FAQ
 │   │   ├── globals.css   # Tailwind import + @theme design tokens
 │   │   ├── layout.tsx    # next/font, AppProvider, header, auth modal
 │   │   ├── page.tsx      # Explore home
 │   │   └── favicon.ico
-│   ├── components/       # cross-route: header/nav, credits pill, toast, auth modal, fanned stack, icons
-│   │   └── composer/     # the composer (used by / and /image) + the / → /image sessionStorage handoff
+│   ├── components/       # cross-route: header/nav, credits pill, toast, auth modal, lightbox, footer, fanned stack, icons
+│   │   └── composer/     # the composer (used by / and /image) + sessionStorage handoffs to /image (generate / draft)
 │   └── lib/
-│       ├── credits.ts    # model costs, shared by UI and API
+│       ├── credits.ts    # model costs, prompt limit, aspects; shared by UI and API
+│       ├── download.ts   # cross-origin image download via blob URL
 │       ├── fal.ts        # server-only; every fal call lives here
 │       ├── ip.ts         # server-only; caller IP → salted hash, IP_DAILY_LIMIT
 │       └── supabase/     # client.ts + session.ts (browser) · server.ts (server-only: session + admin)

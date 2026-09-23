@@ -3,14 +3,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 
 import { LogoMark, ReuseIcon, SparkleIcon } from "@/components/icons";
+import { Lightbox, type LightboxItem } from "@/components/lightbox";
 import { MODELS } from "@/lib/credits";
 
 import { followUps, introLine, outroLine, rejectionLine } from "./assistant-lines";
-import { Lightbox } from "./lightbox";
 import { RunMedia } from "./run-media";
 import type { GenerateRequest, Run, RunImage } from "./types";
-
-export type LightboxItem = { image: RunImage; prompt: string };
 
 const TIME = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 

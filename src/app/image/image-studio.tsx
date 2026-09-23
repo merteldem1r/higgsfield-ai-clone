@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useApp } from "@/components/app-provider";
 import { Composer, type ComposerHandle } from "@/components/composer/composer";
-import { takeStashedGeneration } from "@/components/composer/handoff";
+import { takeStashedDraft, takeStashedGeneration } from "@/components/composer/handoff";
 import { SparkleIcon } from "@/components/icons";
 import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
 import { createClient } from "@/lib/supabase/client";
 
+import { AmbientBackground } from "./ambient-background";
 import { ChatThread } from "./chat-thread";
 import { requestGeneration } from "./request-generation";
 import type { GenerateRequest, Run } from "./types";
@@ -182,6 +183,14 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     const model = new URLSearchParams(window.location.search).get("model");
     if (isModelId(model)) composerRef.current?.setSettings({ model });
 
+    // A Reuse from /assets: fill the composer and stop there. Only a click on Generate spends.
+    const draft = takeStashedDraft();
+    if (draft) {
+      const { prompt, ...settings } = draft;
+      composerRef.current?.setSettings(settings);
+      composerRef.current?.setPrompt(prompt);
+    }
+
     const stashed = takeStashedGeneration();
     if (!stashed) return;
     composerRef.current?.setSettings({ model: stashed.model, aspect: stashed.aspect, batch: stashed.batch });
@@ -205,6 +214,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
 
   return (
     <>
+      <AmbientBackground active={inFlight} />
       {/* max-w-288 minus px-4 is 1120px: the thread shares the composer's column exactly. */}
       <main className="mx-auto flex w-full max-w-288 flex-1 flex-col px-4 pt-6 pb-72 sm:pb-48">
         {runs.length === 0 ? (

@@ -167,6 +167,11 @@ Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`
   - Hover: the image scales 1.015, and a 32px download button appears top-right (`rgb(0 0 0 / .5)` + blur). It's always visible on touch.
   - Click opens the lightbox on `--overlay`.
 - **Failed tile:** same size as the image would be. `--bg-2` with a 1px `--danger` 25% inner ring, a 20px `--danger` icon, "Generation failed", "Your credits were refunded.", and a bordered "Try again" button.
+- **Ambient background *(ours)*:** a fixed layer behind the thread so the page isn't one flat color.
+  - Three soft radial orbs: violet (16% alpha, 60vmax, top-left), sky (12%, 55vmax, right), and pink→peach (12% / 5%, 65vmax, bottom). They drift and scale slowly (26s / 32s / 38s, alternating).
+  - Film grain on top: SVG fractal noise at 4.5%, overlay blend. It stops the dark gradients banding.
+  - **Tied to state:** at rest the layer is at 35% opacity, so the glow stays well under the content. While a generation is in flight it rises to 85% over 1s and breathes (100↔70% over 3.2s), then settles back when the run resolves.
+  - Radial falloff instead of a blur filter, so drifting stays cheap. Static under reduced motion. Image page only.
 - **Empty state:** the hero (fanned stack + headline), then 3 starter chips that fill the composer: "Lighthouse under the Milky Way", "Rainy neon alley", "Glass house in the snow".
 - **Under reduced motion:** no streaming, glow rotation, breathing, shimmer or reveal blur. Fades only.
 
@@ -213,6 +218,41 @@ Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`
 - **Out-of-credits variant *(ours)*:** the signup layout with the title "You're out of free credits" and the subtitle "Sign up to get 50 more — your images stay in your gallery".
 - **Carousel slides *(ours)*:** Flux Dev, Flux Schnell, Presets, Batch, over our own generations. The active bar's fill (5s, linear) drives auto-advance, and the labels are clickable. Under reduced motion the bar is simply full and nothing advances.
 
+**Pricing page *(ours, reduced from the recon)*:** a 1120px column. It keeps the promo card, the plan cards and the FAQ, and drops the plan recommender, the comparison table and the Individual/Business tabs (see PLAN).
+- **Promo card:** `--bg-1` with two radial glows (pink top-right, violet bottom-left) and a 1px white 8% border, `--r-2xl`.
+  - A "Sign-up bonus" pink badge, then a Display headline whose first line is gradient text, then a 14px `--text-2` line.
+  - A white "Sign up for 50 credits" button opens the auth modal.
+- **Header:** "Upgrade your plan" at Inter 40/44 600, −0.02em, then a line about the free credits. A monthly/annual switch (`role="switch"`, track `--brand-gradient` when on, default annual) sits right-aligned above the cards, with a "30% OFF" pink badge.
+- **Plan cards** (3 columns on lg, stacked below), `--r-2xl`, 20px padding:
+  - Starter: `--bg-1`, `--border-2`, white CTA.
+  - Plus (most popular): violet tint fading down, `--accent` 40% border, soft brand glow, gradient CTA with lip.
+  - Ultra (best value): pink tint, `--brand-pink` 30% border, pink CTA with lip.
+  - Each card has a condensed 28px name with badges, a tagline, and a credits box (black 25%, `--r-xl`). The box reads "N credits / month", then "≈ X Flux Schnell / Y Flux Dev images", computed from the real model costs.
+  - The price is in condensed 40px. On annual the monthly price shows struck through in `--brand-pink`, with a "Save $N a year" line.
+  - Features: a check in `--accent-text`, or an x in `--text-disabled`.
+- **CTAs are UI only:** a neutral toast says "Payments aren't live in this demo…". A "Demo pricing. No payments are taken." line sits under the cards.
+- **FAQ:** a 672px column of native `<details>`: `--bg-1` (`--bg-2` when open), 1px `--border-2`, `--r-xl`, 15/600 question, chevron that flips on open.
+  - The answers describe the real demo, built from `credits.ts` constants: costs, free credits, refunds, no live payments, daily limits, not affiliated.
+  - It ends with "Ready to try it?" and a gradient "Start creating" link to /image.
+
+**Assets page:** real data. It reads the visitor's own `assets` (+ `generations` prompt/model/aspect) through the browser client, and RLS scopes it to them. Max 1440px, 16/24px gutters.
+- **Sidebar** (256px on lg, sticky): `--bg-1` panel, `--r-2xl`, 1px `--border-2`, 12px padding.
+  - Search: 40px, `--bg-3`, 1px `--border-3`, search icon, focus border `--accent` 50%. It filters by prompt, client-side.
+  - Items: 40px, `--r-lg`, 16px icon, 14/500. Active is `--bg-3` + `--text-1`, others `--text-2` with a `--bg-2` hover. There's a count pill, or a "Soon" soft badge on disabled items.
+  - The items are Assets, then Favourites (Soon), then a "Tools" group: Image (count), Video (Soon), Audio (Soon).
+  - At the bottom, a `--bg-2` note: "Saved in this browser. Sign up to keep your gallery on every device." with a Sign up link.
+  - Below lg: only the search and the Assets / Favourites row, which scrolls sideways.
+- **Header row:** "All assets" (20/600), the image count ("3 of 12 images" while searching), and on lg a grid-size slider (2–6 columns, default 4) in a 40px `--bg-1` box.
+- **Grid:** CSS columns (always 2 on mobile, the slider controls lg/xl), 6px gaps, true aspect ratios, `--r-lg` tiles.
+  - Hover: the image scales 1.02, and a bottom gradient shows the prompt (2 lines) plus "Reuse" and download buttons (`rgb(0 0 0 / .5)` + blur). They're always visible on touch.
+  - Click opens the lightbox.
+  - **Reuse** stashes a *draft* (a separate sessionStorage key from the Generate handoff) and opens /image with the prompt and settings in the composer. It never starts a generation.
+- **States:**
+  - Loading: shimmer skeleton tiles in mixed aspects.
+  - Empty: the small fanned stack, "Your generations will appear here", "Every image you make is saved here automatically.", and a white 36px "Generate" button.
+  - No search results: "No images match that search" + "Clear search".
+  - Load error: "Couldn't load your gallery" + "Try again".
+
 **Badge pills:**
 - **Base:** 18–20px tall, 6px horizontal padding, `--r-sm` (desktop cards use `--r-xs`), Badge type style.
 - **Solid:** TOP `--brand-pink`/`--accent-ink` · CORE `--blue`/white · TOP (hub) `--purple`/white · NEW, FREE `--brand-gradient`/`--accent-ink` · BEST VALUE `--sky`/white.
@@ -249,6 +289,7 @@ Easing: `--ease-out: cubic-bezier(.2,.8,.2,1)`.
 | Create hub (mobile) | `translateY(100%)→0` | 300ms `--ease-out` |
 | Banner dismiss | height 44→0 + fade | 200ms |
 | Composer in-flight border | accent border opacity 30% ↔ 60% | 1.6s loop |
+| Ambient orbs | drift + scale, alternate / layer 35%→85% + breathe while generating | 26–38s / 1s fade, 3.2s breathe |
 | Assistant text | word-by-word stream after a 450ms beat; gradient caret pulses | 30–60ms/word, +110/+220ms at punctuation |
 | Toast in / out | `translateY(-8px)→0` + fade / fade + `translateY(-4px)` | 200ms / 150ms |
 

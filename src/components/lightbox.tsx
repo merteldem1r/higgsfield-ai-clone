@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
-import { XIcon } from "@/components/icons";
+import { XIcon } from "./icons";
 
-import type { LightboxItem } from "./chat-thread";
+export type LightboxItem = { image: { url: string }; prompt: string };
 
 export function Lightbox({ item, onClose }: { item: LightboxItem | null; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);

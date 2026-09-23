@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { AlertIcon, DownloadIcon, SparkleIcon } from "@/components/icons";
 import { MODELS, type AspectId } from "@/lib/credits";
+import { download } from "@/lib/download";
 
 import type { Run, RunImage } from "./types";
 
@@ -200,20 +201,4 @@ function ImageTile({
       </div>
     </div>
   );
-}
-
-// <a download> is ignored for cross-origin URLs, so fetch the bytes and save them from a blob URL.
-async function download(url: string, fileName: string) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const objectUrl = URL.createObjectURL(await res.blob());
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(objectUrl);
-  } catch {
-    window.open(url, "_blank", "noopener");
-  }
 }

@@ -216,3 +216,67 @@ export function SparkleOutlineIcon(props: IconProps) {
     </Stroke>
   );
 }
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Stroke>
+  );
+}
+
+export function BoxIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </Stroke>
+  );
+}
+
+export function HeartIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5c-2.2 4.6-9.2 9-9.2 9Z" />
+    </Stroke>
+  );
+}
+
+export function ImageIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="m21 16-5-5-9 9" />
+    </Stroke>
+  );
+}
+
+export function VideoIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <rect x="3" y="6" width="13" height="12" rx="2" />
+      <path d="m16 10 5-3v10l-5-3" />
+    </Stroke>
+  );
+}
+
+export function AudioIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" />
+    </Stroke>
+  );
+}
+
+export function GridIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </Stroke>
+  );
+}

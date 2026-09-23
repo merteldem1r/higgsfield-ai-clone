@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { SiteFooter } from "@/components/site-footer";
+
 import { HeroComposer, HomeComposerProvider } from "./_home/home-composer";
 import { ModelChips } from "./_home/model-chips";
 import { PresetRow } from "./_home/preset-row";
 import { PromoCarousel } from "./_home/promo-carousel";
 import { ShowcaseGrid } from "./_home/showcase-grid";
-import { SiteFooter } from "./_home/site-footer";
 
 export default function Home() {
   return (
