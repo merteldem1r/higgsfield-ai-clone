@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { stashDraft } from "@/components/composer/handoff";
 import { ReuseIcon } from "@/components/icons";
@@ -22,6 +22,17 @@ function nearestAspect(width: number, height: number): AspectId {
   return best;
 }
 
+// CSS columns balance by height, and with a small feed they left the last column empty. Explicit columns
+// filled round-robin always use every column, and the newest images read across the top row. One layout
+// per breakpoint, toggled by CSS, so there's no JS measuring and no layout jump after hydration; the
+// hidden copies are display:none, so their lazy images never load.
+const LAYOUTS = [
+  { columns: 2, className: "flex sm:hidden" },
+  { columns: 3, className: "hidden sm:flex lg:hidden" },
+  { columns: 4, className: "hidden lg:flex xl:hidden" },
+  { columns: 5, className: "hidden xl:flex" },
+];
+
 export function CommunityGrid({ items }: { items: CommunityItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState<CommunityItem | null>(null);
@@ -34,17 +45,24 @@ export function CommunityGrid({ items }: { items: CommunityItem[] }) {
 
   return (
     <>
-      {/* CSS columns, not grid: exact aspect ratios with no JS; order runs down each column. */}
-      <ul aria-label="Community images" className="columns-2 gap-1.5 sm:columns-3 lg:columns-4 xl:columns-5">
-        {items.map((item) => (
-          <CommunityTile
-            key={item.url}
-            item={item}
-            onOpen={() => setOpen(item)}
-            onRecreate={(aspect) => recreate(item, aspect)}
-          />
-        ))}
-      </ul>
+      {LAYOUTS.map(({ columns, className }) => (
+        <div key={columns} className={`${className} items-start gap-1.5`}>
+          {Array.from({ length: columns }, (_, column) => (
+            <ul key={column} aria-label={`Community images, column ${column + 1}`} className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {items
+                .filter((_, i) => i % columns === column)
+                .map((item) => (
+                  <CommunityTile
+                    key={item.url}
+                    item={item}
+                    onOpen={() => setOpen(item)}
+                    onRecreate={(aspect) => recreate(item, aspect)}
+                  />
+                ))}
+            </ul>
+          ))}
+        </div>
+      ))}
       <Lightbox item={open && { image: open, prompt: open.prompt }} onClose={() => setOpen(null)} />
     </>
   );
@@ -60,16 +78,22 @@ function CommunityTile({
   onRecreate: (aspect: AspectId) => void;
 }) {
   const [aspect, setAspect] = useState<AspectId | null>(null);
+  // The page is server-rendered, so on a hard refresh a cached image can finish loading before hydration
+  // attaches onLoad, and that event is gone. The ref checks for an already-loaded image on mount too.
+  const measure = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth > 0) setAspect(nearestAspect(img.naturalWidth, img.naturalHeight));
+  }, []);
 
   return (
-    <li className="mb-1.5 break-inside-avoid">
+    <li>
       <div className={`group relative overflow-hidden rounded-lg bg-bg-2 ${aspect ? "" : "aspect-square"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- final JPEG in public Storage; the optimizer would only re-encode it */}
         <img
           src={item.url}
           alt={item.prompt}
           loading="lazy"
-          onLoad={(e) => setAspect(nearestAspect(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight))}
+          ref={measure}
+          onLoad={(e) => measure(e.currentTarget)}
           className={`block h-auto w-full transition-[scale,opacity] duration-300 ease-out motion-safe:group-focus-within:scale-102 motion-safe:group-hover:scale-102 ${
             aspect ? "opacity-100" : "opacity-0"
           }`}

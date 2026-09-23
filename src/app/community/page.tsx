@@ -24,14 +24,30 @@ export default async function CommunityPage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-360 flex-1 px-4 pt-10 pb-16 sm:px-6">
-        <div className="mb-6">
-          <h1 className="font-display text-h2 uppercase">
-            <span className="text-brand-gradient">Community</span>
-          </h1>
-          <p className="mt-1.5 text-sm text-text-2">
-            A hand-picked set of images made on this site. Hover for the prompt, then recreate it.
-          </p>
+      <main className="mx-auto w-full max-w-360 flex-1 px-4 pt-8 pb-16 sm:pt-10 sm:px-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="font-display text-h2 uppercase">
+              <span className="text-brand-gradient">Community</span>
+            </h1>
+            <p className="mt-1.5 text-sm text-text-2">
+              A hand-picked set of images made on this site. Open one for the prompt, then recreate it.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {items && items.length > 0 && (
+              <span className="text-sm text-text-2 tabular-nums">
+                {items.length} {items.length === 1 ? "image" : "images"} · {creatorCount(items)}{" "}
+                {creatorCount(items) === 1 ? "creator" : "creators"}
+              </span>
+            )}
+            <Link
+              href="/image"
+              className="flex h-9 items-center rounded-md bg-bg-3 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-5"
+            >
+              Open Image
+            </Link>
+          </div>
         </div>
 
         {items === null ? (
@@ -46,6 +62,8 @@ export default async function CommunityPage() {
     </>
   );
 }
+
+const creatorCount = (items: CommunityItem[]) => new Set(items.map((item) => item.handle)).size;
 
 function State({ title, text, stack = false }: { title: string; text: string; stack?: boolean }): ReactNode {
   return (
