@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useApp } from "./app-provider";
@@ -33,14 +34,17 @@ function useTickingNumber(target: number | null): number | null {
 }
 
 export function CreditsPill() {
-  const { credits, openAuthModal } = useApp();
+  const router = useRouter();
+  const { account, credits, openAuthModal } = useApp();
   const shown = useTickingNumber(credits);
   const empty = credits === 0;
 
   return (
     <button
       type="button"
-      onClick={() => openAuthModal(empty ? "out-of-credits" : "signup")}
+      onClick={() =>
+        account?.status === "member" ? router.push("/pricing") : openAuthModal(empty ? "out-of-credits" : "signup")
+      }
       aria-label={credits === null ? "Credits" : `${credits} credits`}
       className={`flex h-8 items-center gap-1.5 rounded-full border border-border-3 bg-bg-3 px-3 transition-colors duration-150 hover:bg-bg-5 ${
         empty ? "motion-safe:animate-danger-pulse" : ""

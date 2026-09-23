@@ -16,9 +16,9 @@ export type NavLink = {
 export const LINKS: NavLink[] = [
   { label: "Explore", route: "/" },
   { label: "Image", route: "/image" },
-  { label: "Video" },
   { label: "Assets", route: "/assets" },
   { label: "Community", route: "/community" },
+  { label: "Video" },
   { label: "Audio" },
   { label: "MCP" },
   { label: "API" },

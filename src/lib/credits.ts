@@ -3,6 +3,9 @@
 // Must match v_signup_credits in the handle_new_user trigger. Shown in the pill before a session exists.
 export const FREE_CREDITS = 6;
 
+// Must match v_bonus in grant_upgrade_bonus. Granted once, when a guest adds an email + password.
+export const UPGRADE_BONUS = 20;
+
 export const MODELS = {
   "flux-schnell": {
     label: "Flux Schnell",

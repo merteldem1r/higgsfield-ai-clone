@@ -100,7 +100,7 @@ async function loadAssets(): Promise<Asset[]> {
 
 export function AssetsBrowser() {
   const router = useRouter();
-  const { openAuthModal } = useApp();
+  const { account, openAuthModal } = useApp();
   const [assets, setAssets] = useState<Asset[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -192,16 +192,23 @@ export function AssetsBrowser() {
           </nav>
 
           {/* Anonymous galleries live in this browser's session; saying so beats a surprise after clearing cookies. */}
-          <div className="rounded-xl bg-bg-2 p-3 text-xs leading-5 text-text-2 max-lg:hidden">
-            Saved in this browser. Sign up to keep your gallery on every device.
-            <button
-              type="button"
-              onClick={() => openAuthModal("signup")}
-              className="mt-1 block font-semibold text-accent-text transition-colors duration-150 hover:text-accent-hover"
-            >
-              Sign up
-            </button>
-          </div>
+          {account?.status === "member" ? (
+            <div className="rounded-xl bg-bg-2 p-3 text-xs leading-5 text-text-2 max-lg:hidden">
+              Saved to your account. Log in as <span className="break-all text-text-1">{account.email}</span> to see it on
+              any device.
+            </div>
+          ) : (
+            <div className="rounded-xl bg-bg-2 p-3 text-xs leading-5 text-text-2 max-lg:hidden">
+              Saved in this browser. Sign up to keep your gallery on every device.
+              <button
+                type="button"
+                onClick={() => openAuthModal("signup")}
+                className="mt-1 block font-semibold text-accent-text transition-colors duration-150 hover:text-accent-hover"
+              >
+                Sign up
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 

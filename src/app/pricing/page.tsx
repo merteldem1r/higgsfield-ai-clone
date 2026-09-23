@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { ChevronUpIcon, TagIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
-import { FREE_CREDITS, MODELS } from "@/lib/credits";
+import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
 
 import { Plans } from "./plans";
 import { SignUpButton } from "./sign-up-button";
@@ -51,7 +51,7 @@ export default function PricingPage() {
             Sign-up bonus
           </span>
           <h2 className="mt-4 font-display text-display-sm uppercase sm:text-display">
-            <span className="text-brand-gradient">50 extra credits</span>
+            <span className="text-brand-gradient">{UPGRADE_BONUS} extra credits</span>
             <br />
             when you create an account
           </h2>
@@ -60,7 +60,7 @@ export default function PricingPage() {
             credits.
           </p>
           <SignUpButton className="mt-6 flex h-10 items-center rounded-md bg-white px-4 text-sm font-semibold text-black transition-colors duration-150 hover:bg-white/85">
-            Sign up for 50 credits
+            Sign up for {UPGRADE_BONUS} credits
           </SignUpButton>
         </section>
 

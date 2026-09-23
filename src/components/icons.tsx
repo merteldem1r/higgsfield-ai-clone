@@ -20,7 +20,7 @@ function Stroke({ children, ...props }: IconProps) {
 }
 
 // The logo gradient as SVG stops. Stop colors come from theme vars via classes (presentation attributes can't read var()).
-function BrandGradient({ id, x1, x2, y }: { id: string; x1: number; x2: number; y: number }) {
+export function BrandGradient({ id, x1, x2, y }: { id: string; x1: number; x2: number; y: number }) {
   return (
     <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x1} y1={y} x2={x2} y2={y}>
       <stop offset="0" className="[stop-color:var(--color-brand-sky)]" />
@@ -302,6 +302,48 @@ export function MenuIcon(props: IconProps) {
   return (
     <Stroke {...props}>
       <path d="M4 7h16M4 12h16M4 17h16" />
+    </Stroke>
+  );
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5c.8-3.9 3.8-6.2 7.5-6.2s6.7 2.3 7.5 6.2" />
+    </Stroke>
+  );
+}
+
+export function CrownIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="m3.5 8 4.2 3.6L12 5l4.3 6.6L20.5 8l-1.8 10.5H5.3L3.5 8Z" />
+    </Stroke>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="m9.5 6 6 6-6 6" />
+    </Stroke>
+  );
+}
+
+export function HelpIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17.2v.1" />
+    </Stroke>
+  );
+}
+
+export function LogOutIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M10 4.5H6a1.5 1.5 0 0 0-1.5 1.5v12A1.5 1.5 0 0 0 6 19.5h4M14.5 8l4 4-4 4M18.5 12H9.5" />
     </Stroke>
   );
 }

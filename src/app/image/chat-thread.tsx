@@ -1,10 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+
+import { useApp } from "@/components/app-provider";
 
 import { LogoMark, ReuseIcon, SparkleIcon } from "@/components/icons";
 import { Lightbox } from "@/components/lightbox";
-import { MODELS } from "@/lib/credits";
+import { MODELS, UPGRADE_BONUS } from "@/lib/credits";
 
 import { followUps, introLine, outroLine, rejectionLine } from "./assistant-lines";
 import { RunMedia } from "./run-media";
@@ -133,6 +136,10 @@ function AssistantTurn({
   onSignUp: () => void;
   retryDisabled: boolean;
 }) {
+  const router = useRouter();
+  const { account } = useApp();
+  // A signed-in visitor has no signup bonus left to offer; running out points them to plans instead.
+  const member = account?.status === "member";
   const [introDone, setIntroDone] = useState(!animate);
   const [outroDone, setOutroDone] = useState(!animate);
   const rejected = run.status === "rejected";
@@ -164,7 +171,7 @@ function AssistantTurn({
 
         {introDone && settled && (
           <StreamedText
-            text={rejected ? rejectionLine(run) : outroLine(run)}
+            text={rejected ? rejectionLine(run, member) : outroLine(run)}
             animate={animate}
             onDone={() => setOutroDone(true)}
           />
@@ -182,7 +189,12 @@ function AssistantTurn({
                   </span>
                 </Chip>
               ))}
-            {rejected && code === "INSUFFICIENT_CREDITS" && <Chip onClick={onSignUp}>Sign up for 50 credits</Chip>}
+            {rejected && code === "INSUFFICIENT_CREDITS" &&
+              (member ? (
+                <Chip onClick={() => router.push("/pricing")}>See plans</Chip>
+              ) : (
+                <Chip onClick={onSignUp}>Sign up for {UPGRADE_BONUS} credits</Chip>
+              ))}
             {rejected && RETRYABLE.has(code) && (
               <Chip onClick={onRetry} disabled={retryDisabled}>
                 Try again

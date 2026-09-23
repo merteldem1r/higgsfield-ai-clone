@@ -1,4 +1,4 @@
-import { batchCost, MODELS, type AspectId } from "@/lib/credits";
+import { batchCost, MODELS, UPGRADE_BONUS, type AspectId } from "@/lib/credits";
 
 import type { GenerateRequest, Run } from "./types";
 
@@ -103,12 +103,14 @@ export function outroLine(run: Run): string {
 }
 
 // Turns the API rejected before spending anything. Worded as the assistant, not as an error dialog.
-export function rejectionLine(run: Run): string {
+export function rejectionLine(run: Run, member = false): string {
   const code = run.rejection?.code ?? "UNKNOWN";
   const cost = batchCost(run.request.model, run.request.batch).credits;
   switch (code) {
     case "INSUFFICIENT_CREDITS":
-      return `This needs ${cost} credits, more than you have left. Sign up to get 50 more; your images stay right here.`;
+      return member
+        ? `This needs ${cost} credits, more than you have left. A plan tops you up; your images stay right here.`
+        : `This needs ${cost} credits, more than you have left. Sign up to get ${UPGRADE_BONUS} more; your images stay right here.`;
     case "GLOBAL_CAP":
       return "Today's demo budget is used up, so I can't render more until tomorrow. Everything you've made is still here.";
     case "IP_LIMIT":
