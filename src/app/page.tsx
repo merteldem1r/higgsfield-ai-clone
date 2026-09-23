@@ -12,7 +12,7 @@ import { ShowcaseGrid } from "./_home/showcase-grid";
 export default function Home() {
   return (
     <>
-      <main className="mx-auto w-full max-w-360 flex-1 px-4 pt-4 sm:px-6">
+      <main className="mx-auto w-full max-w-360 flex-1 overflow-x-clip px-4 pt-4 sm:px-6">
         <HomeComposerProvider>
           <PromoCarousel />
 

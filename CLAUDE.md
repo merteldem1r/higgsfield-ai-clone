@@ -77,8 +77,10 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 ├── src/
 │   ├── app/
 │   │   ├── api/generate/route.ts  # POST: auth → start_generation → fal → Storage → complete
+│   │   ├── api/assets/[id]/favourite/route.ts  # POST: auth → set_favourite
 │   │   ├── _home/        # / sections: carousel, hero composer, showcase grid, presets
-│   │   ├── assets/       # /assets: the visitor's gallery (RLS-scoped reads), search, grid slider
+│   │   ├── assets/       # /assets: the visitor's gallery (RLS-scoped reads), search, favourites, grid slider
+│   │   ├── community/    # /community: featured generations, read server-side (service role, whitelisted fields)
 │   │   ├── image/        # /image: chat thread, assistant lines, run media, ambient background
 │   │   ├── pricing/      # /pricing: plan cards (UI only), FAQ
 │   │   ├── globals.css   # Tailwind import + @theme design tokens
