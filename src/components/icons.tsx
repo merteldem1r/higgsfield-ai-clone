@@ -280,3 +280,28 @@ export function GridIcon(props: IconProps) {
     </Stroke>
   );
 }
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1v-8.5Z" />
+    </Stroke>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.9.7 3.2 2.6 3.5 5.2" />
+    </Stroke>
+  );
+}
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </Stroke>
+  );
+}

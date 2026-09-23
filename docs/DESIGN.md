@@ -116,7 +116,7 @@ Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`
   - **Generate:** 174×82 desktop (it spans both rows), `--r-xl`, `--brand-gradient`, `--lip`, hover `brightness(1.1)`. Content is "Generate" (16/600) + sparkle + the struck cost in `--accent-ink` at 50% + the real cost in 16/700.
   - **Disabled** (empty prompt or request in flight): `--brand-gradient-muted`, no lip.
   - **Cost higher than balance:** the label reads "Get more credits" and clicking opens the modal.
-- **Mobile (< 640px):** one column. The chips scroll horizontally, and Generate becomes full width and 52px tall.
+- **Mobile (< 640px):** one column. The chips scroll horizontally, with a 40px `--bg-2` fade at the right edge so the row reads as scrollable, and Generate becomes full width and 52px tall.
 - **While a generation is in flight** *(ours)*. This runs from the click until the tile resolves, and covers the lazy sign-in too.
   - The **textarea stays editable**, so the user can write the next prompt.
   - **Chips drop to 50% opacity and ignore clicks.** Any open dropdown closes. The settings being used belong to the pending tile, so changing them mid-flight would be misleading.
@@ -260,13 +260,10 @@ Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`
 - **Category chip on tiles:** "Image"/"Video", 24px tall, `--bg-5` fill, `--r-md`, 12/500 `#d6d6d7`, with an icon.
 
 **Mobile bottom tab bar (< 768px):**
-- **Bar:** fixed, 64px tall + `env(safe-area-inset-bottom)`. `--tabbar` background, 1px `--border-1` top border.
-- **Items:** Home, Explore, **Create**, Assets, Profile. Each is a 22px icon above an 11/500 label. Inactive items are `--text-2`, the active one `--text-1`.
-- **Create:** a `--brand-gradient` button, 64×44, `--r-lg`, `--lip`, dark sparkle icon, no label, rising 6px above the bar.
-- **Create hub:** tapping Create opens a full-screen sheet.
-  - Sheet: `#131313` background. 28/600 "Create" title. 40px close circle (`--bg-3`).
-  - Filter pills, 44px tall: active is white with black text, inactive is `--text-2` text.
-  - Cards: 2 columns, 12px gap, `--chip` fill, `--r-xl`. Each card has an image top (4:3), an h3, a 13px `--text-2` subtitle and a corner badge.
+- **Bar:** fixed, 64px tall + `env(safe-area-inset-bottom)` (the page sets `viewport-fit=cover`). `--tabbar` background, 1px `--border-1` top border. Its height is `--tabbar-h` (0 from md up); the body's bottom padding and the docked composer on Image clear it.
+- **Items *(ours)*:** Home, Community, **Create**, Assets, Pricing. Each is a 22px icon above an 11/500 label. Inactive items are `--text-2`, the active one `--text-1`. (The recon's Explore is our Home, and there's no Profile page.)
+- **Create:** a `--brand-gradient` button, 64×44, `--r-lg`, `--lip`, dark sparkle icon, no label, rising 6px above the bar. It opens /image with the composer focused (on /image it just focuses it). iOS won't raise the keyboard from a focus after navigation, so there the visitor taps the prompt once. The Create hub sheet from the recon is not built.
+- **Top bar below 768px:** logo, credits pill, Sign up, and a 32px menu button. The desktop link row is hidden; the menu opens a full-screen sheet (`--bg-1`) with the full nav list, Soon items included, 48px rows.
 
 **Page layout:** content max width 1440px, 16px gutters on mobile and 24px on desktop. On Image, results scroll behind the composer, with 180px of bottom padding so the last row stays visible.
 

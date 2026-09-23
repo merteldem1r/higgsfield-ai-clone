@@ -24,6 +24,7 @@ export type ComposerHandle = {
   /** `select` pre-selects a range (e.g. a preset's subject) so the first keystroke replaces it. */
   setPrompt: (prompt: string, select?: [number, number]) => void;
   setSettings: (settings: Partial<Omit<GenerateRequest, "prompt">>) => void;
+  focus: () => void;
 };
 
 const MAX_TEXTAREA_PX = 110; // 5 lines at 22px
@@ -95,6 +96,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
       if (settings.aspect) setAspect(settings.aspect);
       if (settings.batch) setBatch(settings.batch);
     },
+    focus: () => textareaRef.current?.focus({ preventScroll: true }),
   }));
 
   // field-sizing handles auto-grow where supported (Chromium, Safari); this covers Firefox.
@@ -187,7 +189,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
           )}
         </div>
 
-        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="-mx-3 flex gap-2 overflow-x-auto overscroll-x-contain pl-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:pl-0">
           <ChipMenu
             label="Model"
             icon={<SparkleIcon gradient />}
@@ -231,6 +233,12 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
               <PlusIcon className="size-3.5" />
             </button>
           </div>
+          {/* Fades chips out at the right edge so the row reads as scrollable, and doubles as its end padding.
+              Not a mask on the row: that would also fade the chip menus, which render inside it. */}
+          <span
+            aria-hidden
+            className="pointer-events-none sticky right-0 -ml-2 w-10 shrink-0 bg-linear-to-l from-bg-2 to-transparent sm:hidden"
+          />
         </div>
       </div>
 

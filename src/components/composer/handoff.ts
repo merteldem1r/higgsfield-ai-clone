@@ -43,3 +43,8 @@ export const takeStashedGeneration = () => take(GENERATION_KEY);
 
 export const stashDraft = (request: GenerateRequest) => stash(DRAFT_KEY, request);
 export const takeStashedDraft = () => take(DRAFT_KEY);
+
+// The mobile Create tab. From another page it links to /image?focus=1; already on /image there's no
+// navigation to read a param from, so it fires this event instead.
+export const FOCUS_PARAM = "focus";
+export const FOCUS_COMPOSER_EVENT = "composer:focus";

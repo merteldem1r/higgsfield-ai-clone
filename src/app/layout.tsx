@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
 import { AppHeader } from "@/components/app-header";
 import { AppProvider } from "@/components/app-provider";
 import { AuthModal } from "@/components/auth-modal";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BANNER_STORAGE_KEY } from "@/components/promo-banner-key";
 import "./globals.css";
 
@@ -23,6 +24,9 @@ export const metadata: Metadata = {
   description: "Type a prompt, get a real AI image. No signup.",
 };
 
+// cover: lets env(safe-area-inset-bottom) report the iPhone home indicator, so the tab bar can clear it.
+export const viewport: Viewport = { viewportFit: "cover" };
+
 // Runs before paint so a dismissed promo banner doesn't flash in and then collapse.
 const bannerScript = `try{if(localStorage.getItem(${JSON.stringify(BANNER_STORAGE_KEY)})==="1")document.documentElement.dataset.banner="dismissed"}catch(e){}`;
 
@@ -37,10 +41,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: bannerScript }} />
       </head>
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="flex min-h-full flex-col pb-(--tabbar-h) font-sans">
         <AppProvider>
           <AppHeader />
           {children}
+          <MobileTabBar />
           <AuthModal />
         </AppProvider>
       </body>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
 
-type NavLink = {
+export type NavLink = {
   label: string;
   /** Real route. Items without one aren't built: they render as plain text with a Soon badge, not a link. */
   route?: string;
@@ -13,7 +13,7 @@ type NavLink = {
 };
 
 // A link that bounced back to Explore read as broken; a Soon badge reads as scope.
-const LINKS: NavLink[] = [
+export const LINKS: NavLink[] = [
   { label: "Explore", route: "/" },
   { label: "Image", route: "/image" },
   { label: "Video" },
@@ -31,11 +31,16 @@ const LINKS: NavLink[] = [
   { label: "Supercomputer" },
 ];
 
-const SOON_BADGE = (
+export const SOON_BADGE = (
   <span className="flex h-4 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold text-accent-text">
     Soon
   </span>
 );
+
+export function isActive(route: string | undefined, pathname: string): boolean {
+  if (!route) return false;
+  return route === "/" ? pathname === "/" : pathname.startsWith(route);
+}
 
 export function NavLinks() {
   const pathname = usePathname();
@@ -46,7 +51,7 @@ export function NavLinks() {
       <ul className="flex w-max items-center gap-5 pr-10">
         {LINKS.map((link) => {
           const { route } = link;
-          const active = route ? (route === "/" ? pathname === "/" : pathname.startsWith(route)) : false;
+          const active = isActive(route, pathname);
 
           return (
             <Fragment key={link.label}>

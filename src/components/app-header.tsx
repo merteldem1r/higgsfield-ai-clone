@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthButtons } from "./auth-buttons";
 import { CreditsPill } from "./credits-pill";
 import { DiamondIcon, GlobeIcon, LogoMark, SparkleOutlineIcon } from "./icons";
+import { MobileMenu } from "./mobile-menu";
 import { NavLinks } from "./nav-links";
 import { PromoBanner } from "./promo-banner";
 import { ToastViewport } from "./toast-viewport";
@@ -20,7 +21,7 @@ export function AppHeader() {
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link
             href="/pricing"
-            className="relative flex h-8 items-center gap-1.5 rounded-md bg-bg-3 px-3 text-sm font-medium transition-colors duration-150 hover:bg-bg-5 max-sm:hidden"
+            className="relative flex h-8 items-center gap-1.5 rounded-md bg-bg-3 px-3 text-sm font-medium transition-colors duration-150 hover:bg-bg-5 max-md:hidden"
           >
             <DiamondIcon className="size-3.5" />
             Pricing
@@ -43,9 +44,10 @@ export function AppHeader() {
           >
             <GlobeIcon className="size-4" />
           </Link>
-          <span aria-hidden className="mx-1 h-4 w-px bg-border-3 max-sm:hidden" />
+          <span aria-hidden className="mx-1 h-4 w-px bg-border-3 max-md:hidden" />
           <CreditsPill />
           <AuthButtons />
+          <MobileMenu />
         </div>
       </nav>
       <ToastViewport />

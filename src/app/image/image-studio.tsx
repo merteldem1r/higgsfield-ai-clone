@@ -4,7 +4,12 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useApp } from "@/components/app-provider";
 import { Composer, type ComposerHandle } from "@/components/composer/composer";
-import { takeStashedDraft, takeStashedGeneration } from "@/components/composer/handoff";
+import {
+  FOCUS_COMPOSER_EVENT,
+  FOCUS_PARAM,
+  takeStashedDraft,
+  takeStashedGeneration,
+} from "@/components/composer/handoff";
 import { useFavourite } from "@/components/favourite-button";
 import { SparkleIcon } from "@/components/icons";
 import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
@@ -193,8 +198,17 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
   // Arrivals from /: ?model=… preselects the chip, and a Generate click made on / starts here at once.
   // Must stay below the effect above, which is what fills latestGenerate on the first commit.
   useEffect(() => {
-    const model = new URLSearchParams(window.location.search).get("model");
+    const params = new URLSearchParams(window.location.search);
+    const model = params.get("model");
     if (isModelId(model)) composerRef.current?.setSettings({ model });
+
+    // The mobile Create tab. Dropped from the URL so a refresh doesn't refocus.
+    if (params.has(FOCUS_PARAM)) {
+      composerRef.current?.focus();
+      params.delete(FOCUS_PARAM);
+      const query = params.toString();
+      window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+    }
 
     // A Reuse from /assets: fill the composer and stop there. Only a click on Generate spends.
     const draft = takeStashedDraft();
@@ -208,6 +222,12 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     if (!stashed) return;
     composerRef.current?.setSettings({ model: stashed.model, aspect: stashed.aspect, batch: stashed.batch });
     void latestGenerate.current?.(stashed);
+  }, []);
+
+  useEffect(() => {
+    const focus = () => composerRef.current?.focus();
+    window.addEventListener(FOCUS_COMPOSER_EVENT, focus);
+    return () => window.removeEventListener(FOCUS_COMPOSER_EVENT, focus);
   }, []);
 
   // The failed or rejected turn stays in the thread as a record; the retry is a new turn below it.
@@ -265,9 +285,9 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
       {/* Results fade into the page color behind the composer instead of cutting off hard at its edge. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-60 bg-linear-to-t from-bg-0 via-bg-0/85 to-transparent sm:h-44"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-[calc(15rem+var(--tabbar-h))] bg-linear-to-t from-bg-0 via-bg-0/85 to-transparent sm:h-[calc(11rem+var(--tabbar-h))]"
       />
-      <div className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-280 sm:bottom-5">
+      <div className="fixed inset-x-4 bottom-[calc(1rem+var(--tabbar-h))] z-30 mx-auto max-w-280 sm:bottom-[calc(1.25rem+var(--tabbar-h))]">
         <Composer ref={composerRef} inFlight={inFlight} blocked={blocked} onGenerate={generate} docked />
       </div>
     </>

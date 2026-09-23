@@ -207,6 +207,16 @@
     color-scheme: dark;
   }
 
+  /* Height of the mobile tab bar; fixed-bottom UI and the body's bottom padding clear it. Zero from md up. */
+  :root {
+    --tabbar-h: 0px;
+  }
+  @media (width < 48rem) {
+    :root {
+      --tabbar-h: calc(64px + env(safe-area-inset-bottom));
+    }
+  }
+
   /* showModal() makes the page inert but still scrollable. Lock it while any dialog is open;
      the stable gutter keeps the layout from jumping where scrollbars take up space. */
   html:has(dialog[open]) {
