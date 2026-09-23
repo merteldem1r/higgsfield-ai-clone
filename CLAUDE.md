@@ -67,6 +67,8 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 │   ├── PLAN.md           # scope, build order, data model, credit rules
 │   ├── DESIGN.md         # tokens, type, components, states, motion
 │   └── recon/            # notes.md + screenshots/ of the original
+├── scripts/
+│   └── test-credits.mts  # npm run test:credits; credit/abuse checks against next dev
 ├── supabase/
 │   └── migrations/       # SQL applied by hand in the Supabase SQL editor
 ├── src/
@@ -80,6 +82,7 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 │   └── lib/
 │       ├── credits.ts    # model costs, shared by UI and API
 │       ├── fal.ts        # server-only; every fal call lives here
+│       ├── ip.ts         # server-only; caller IP → salted hash, IP_DAILY_LIMIT
 │       └── supabase/     # client.ts (browser) · server.ts (server-only: session + admin)
 ├── .env.example          # env var names, no values
 ├── .env.local            # real values, gitignored

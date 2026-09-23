@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { DEFAULT_MODEL, MODELS } from "@/lib/credits";
 import { generateSchnell, type GeneratedImage } from "@/lib/fal";
+import { hashClientIp, ipDailyLimit } from "@/lib/ip";
 import { createAdminClient, getUserId } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
@@ -11,9 +12,21 @@ const MAX_PROMPT_LENGTH = 2000; // matches the generations.prompt check
 // Leaves room under maxDuration to fail the generation and refund before the platform kills us.
 const FAL_TIMEOUT_MS = 45_000;
 
+type StartErrorCode = "NO_PROFILE" | "GLOBAL_CAP" | "IP_LIMIT" | "INSUFFICIENT_CREDITS";
+
 type StartResult =
   | { ok: true; generation_id: string; credits: number }
-  | { ok: false; code: "INSUFFICIENT_CREDITS" | "GLOBAL_CAP" };
+  | { ok: false; code: StartErrorCode };
+
+// NO_PROFILE is a valid session whose user has no profiles row (created before the
+// signup trigger existed, or the profile was removed). 401 so the client drops the
+// session and signs in again, same as UNAUTHENTICATED.
+const START_ERRORS: Record<StartErrorCode, { status: number; message: string }> = {
+  NO_PROFILE: { status: 401, message: "Your session is no longer valid. Reload to start a new one." },
+  GLOBAL_CAP: { status: 503, message: "Demo budget reached for today." },
+  IP_LIMIT: { status: 429, message: "Daily image limit reached for your network. Try again tomorrow." },
+  INSUFFICIENT_CREDITS: { status: 402, message: "Not enough credits." },
+};
 
 type CompleteResult = { ok: true; credits: number } | { ok: false; code: "NOT_PENDING" };
 
@@ -53,6 +66,8 @@ export async function POST(request: Request) {
     p_batch: batch,
     p_cost_credits: model.credits * batch,
     p_est_usd: model.estUsd * batch,
+    p_ip_hash: hashClientIp(request),
+    p_ip_daily_limit: ipDailyLimit(),
   });
   if (startError) {
     console.error("start_generation failed", startError);
@@ -61,14 +76,17 @@ export async function POST(request: Request) {
 
   const start = started as StartResult;
   if (!start.ok) {
-    return start.code === "INSUFFICIENT_CREDITS"
-      ? errorResponse(402, "INSUFFICIENT_CREDITS", "Not enough credits.")
-      : errorResponse(503, "GLOBAL_CAP", "Demo budget reached for today.");
+    const { status, message } = START_ERRORS[start.code];
+    return errorResponse(status, start.code, message);
   }
 
   const generationId = start.generation_id;
 
   try {
+    // Dev-only seam for scripts/test-credits.mts. Vercel builds always run with NODE_ENV=production.
+    if (process.env.NODE_ENV === "development" && request.headers.get("x-test-fail-fal") === "1") {
+      throw new Error("forced fal failure (test)");
+    }
     const images = await generateSchnell(prompt, AbortSignal.timeout(FAL_TIMEOUT_MS));
     if (images.length !== batch) {
       throw new Error(`Expected ${batch} image(s), got ${images.length} (safety filter or provider)`);

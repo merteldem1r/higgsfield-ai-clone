@@ -72,7 +72,7 @@ app_budget   singleton: total_spent_usd · total_cap_usd (9.00) · day · day_sp
 - A batch is spent as a single unit. If fal returns fewer images than requested, the missing ones are refunded.
 - **Abuse layers:**
   1. Supabase's anonymous sign-in rate limit: **30 per hour per IP** by default, with bursts up to the limit. Set with `rate_limit_anonymous_users` (Dashboard → Authentication → Rate Limits).
-  2. A per-IP cap of 30 images per day, counted from `generations.ip_hash` and set by the `IP_DAILY_LIMIT` env var.
+  2. A per-IP cap of 30 images per UTC day, counted from `generations.ip_hash` and set by the `IP_DAILY_LIMIT` env var. The hash is an HMAC of the IP with `IP_HASH_SALT`; IPv6 is bucketed per /64. Failed (refunded) generations still count, since fal may have billed them.
   3. The app budget: $5/day and $9 total.
   4. The prepaid $10 fal balance, which is the hard ceiling.
 - **Error codes from `/api/generate`** (the UI surfaces are in DESIGN.md → Error surfaces):
@@ -80,6 +80,7 @@ app_budget   singleton: total_spent_usd · total_cap_usd (9.00) · day · day_sp
   - `GLOBAL_CAP` (503): notice bar, "demo budget reached for today".
   - `FAL_DISABLED` (503): env kill switch; notice bar.
   - `IP_LIMIT` (429): the per-IP daily cap (`IP_DAILY_LIMIT`); notice bar.
+  - `NO_PROFILE` (401): a valid session whose user has no `profiles` row. The client drops the session and signs in again, as for `UNAUTHENTICATED` (401).
   - Provider failure (502): failed tile, credits refunded.
   - Only provider failure charges and then refunds. The other codes reject the request before any credits are spent.
 
