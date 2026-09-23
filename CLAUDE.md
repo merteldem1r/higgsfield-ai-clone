@@ -57,7 +57,7 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 - RLS is enabled on every table. **Anonymous users get the `authenticated` role, so "authenticated can do X" means "any visitor can do X".** Write policies with that in mind, scoping them to `auth.uid() = user_id`.
 - No Higgsfield logos, photos or video. Showcase and empty-state images come from our own generations.
 
-**Folder structure** (as of step 1; update when top-level folders change):
+**Folder structure** (as of step 3; update when top-level folders change):
 ```
 .
 ├── .agent-logs/          # capture-hook output, append-only, committed
@@ -67,6 +67,8 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 │   ├── PLAN.md           # scope, build order, data model, credit rules
 │   ├── DESIGN.md         # tokens, type, components, states, motion
 │   └── recon/            # notes.md + screenshots/ of the original
+├── public/
+│   └── showcase/         # our own Flux Dev generations for empty states + showcase
 ├── scripts/
 │   └── test-credits.mts  # npm run test:credits; credit/abuse checks against next dev
 ├── supabase/
@@ -74,16 +76,17 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 ├── src/
 │   ├── app/
 │   │   ├── api/generate/route.ts  # POST: auth → start_generation → fal → Storage → complete
-│   │   ├── image/        # /image page + its client form
+│   │   ├── image/        # /image: studio, composer, chip menus, results grid, notice bar
 │   │   ├── globals.css   # Tailwind import + @theme design tokens
-│   │   ├── layout.tsx    # next/font: Barlow Condensed 800 + Inter
+│   │   ├── layout.tsx    # next/font, AppProvider, header, auth modal
 │   │   ├── page.tsx      # placeholder home
 │   │   └── favicon.ico
+│   ├── components/       # cross-route: header/nav, credits pill, toast, auth modal, fanned stack, icons
 │   └── lib/
 │       ├── credits.ts    # model costs, shared by UI and API
 │       ├── fal.ts        # server-only; every fal call lives here
 │       ├── ip.ts         # server-only; caller IP → salted hash, IP_DAILY_LIMIT
-│       └── supabase/     # client.ts (browser) · server.ts (server-only: session + admin)
+│       └── supabase/     # client.ts + session.ts (browser) · server.ts (server-only: session + admin)
 ├── .env.example          # env var names, no values
 ├── .env.local            # real values, gitignored
 ├── eslint.config.mjs
@@ -94,7 +97,7 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 ├── CAPTURE-TEST.md
 └── CLAUDE.md
 ```
-Expected additions: `src/components/` for cross-route pieces only.
+`src/components/` is for cross-route pieces only.
 
 ## Priorities, when they conflict
 
@@ -105,6 +108,7 @@ correctness → security → speed of delivery → polish
 - Server Components by default. Put `"use client"` on the leaf that needs interactivity, never on a page or layout.
 - Generation goes through `POST /api/generate` (a Route Handler), not a Server Action, so it can be curl-tested.
 - Style with Tailwind only, using the `docs/DESIGN.md` tokens defined once as CSS variables in the Tailwind v4 `@theme`. No inline styles, no CSS modules, no raw hex values in components.
+- Every clickable element must show `cursor: pointer` (disabled ones: `not-allowed`). Tailwind v4 resets buttons to `cursor: default`, so a base rule in `globals.css` restores it for `button`/`[role=button]`; anything else clickable (a `div` or `li` with `onClick`) needs `cursor-pointer` on it.
 
 ## Architecture boundaries
 

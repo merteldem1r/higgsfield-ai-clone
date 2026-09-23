@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Same drawing as LogoMark in src/components/icons.tsx; raw hex because favicons can't read theme vars. -->
+  <defs>
+    <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="6" y1="16" x2="26" y2="16">
+      <stop offset="0" stop-color="#69c5fa"/>
+      <stop offset="0.38" stop-color="#8472fb"/>
+      <stop offset="0.68" stop-color="#ed77cc"/>
+      <stop offset="1" stop-color="#fbca74"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0f1113"/>
+  <g stroke="url(#g)" stroke-width="2.4" stroke-linecap="round">
+    <path d="M7 13V10.5A4 4 0 0 1 11 6.5H13.5"/>
+    <path d="M18.5 6.5H21A4 4 0 0 1 25 10.5V13"/>
+    <path d="M25 19V21.5A4 4 0 0 1 21 25.5H18.5"/>
+    <path d="M13.5 25.5H11A4 4 0 0 1 7 21.5V19"/>
+  </g>
+  <path d="M16 8C16.9 12.4 19.2 15.1 23.6 16C19.2 16.9 16.9 19.6 16 24C15.1 19.6 12.8 16.9 8.4 16C12.8 15.1 15.1 12.4 16 8Z" fill="url(#g)"/>
+</svg>

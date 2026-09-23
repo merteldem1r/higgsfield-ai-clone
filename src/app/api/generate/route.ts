@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 
-import { DEFAULT_MODEL, MODELS } from "@/lib/credits";
-import { generateSchnell, type GeneratedImage } from "@/lib/fal";
+import {
+  ASPECTS,
+  BATCH_MAX,
+  BATCH_MIN,
+  DEFAULT_ASPECT,
+  DEFAULT_MODEL,
+  MODELS,
+  isAspectId,
+  isModelId,
+  type AspectId,
+  type ModelId,
+} from "@/lib/credits";
+import { generateImages, type GeneratedImage } from "@/lib/fal";
 import { hashClientIp, ipDailyLimit } from "@/lib/ip";
 import { createAdminClient, getUserId } from "@/lib/supabase/server";
 
@@ -36,33 +47,42 @@ function errorResponse(status: number, code: string, message: string) {
   return NextResponse.json({ code, message }, { status });
 }
 
-async function readPrompt(request: Request): Promise<string | null> {
+type GenerateInput = { prompt: string; model: ModelId; aspect: AspectId; batch: number };
+
+// Missing settings fall back to the defaults; present-but-invalid ones are rejected rather than coerced.
+async function readInput(request: Request): Promise<GenerateInput | { error: string }> {
   const body: unknown = await request.json().catch(() => null);
-  if (typeof body !== "object" || body === null || !("prompt" in body)) return null;
-  const { prompt } = body;
-  if (typeof prompt !== "string") return null;
-  const trimmed = prompt.trim();
-  return trimmed.length > 0 && trimmed.length <= MAX_PROMPT_LENGTH ? trimmed : null;
+  if (typeof body !== "object" || body === null) return { error: "Body must be a JSON object." };
+  const { prompt, model = DEFAULT_MODEL, aspect = DEFAULT_ASPECT, batch = 1 } = body as Record<string, unknown>;
+
+  const trimmed = typeof prompt === "string" ? prompt.trim() : "";
+  if (trimmed.length === 0 || trimmed.length > MAX_PROMPT_LENGTH) {
+    return { error: `Prompt must be 1–${MAX_PROMPT_LENGTH} characters.` };
+  }
+  if (!isModelId(model)) return { error: `Model must be one of: ${Object.keys(MODELS).join(", ")}.` };
+  if (!isAspectId(aspect)) return { error: `Aspect must be one of: ${Object.keys(ASPECTS).join(", ")}.` };
+  if (typeof batch !== "number" || !Number.isInteger(batch) || batch < BATCH_MIN || batch > BATCH_MAX) {
+    return { error: `Batch must be an integer from ${BATCH_MIN} to ${BATCH_MAX}.` };
+  }
+  return { prompt: trimmed, model, aspect, batch };
 }
 
 export async function POST(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return errorResponse(401, "UNAUTHENTICATED", "Sign in to generate.");
 
-  const prompt = await readPrompt(request);
-  if (!prompt) {
-    return errorResponse(400, "INVALID_PROMPT", `Prompt must be 1–${MAX_PROMPT_LENGTH} characters.`);
-  }
+  const input = await readInput(request);
+  if ("error" in input) return errorResponse(400, "INVALID_INPUT", input.error);
+  const { prompt, aspect, batch } = input;
 
-  const model = MODELS[DEFAULT_MODEL];
-  const batch = 1;
+  const model = MODELS[input.model];
   const admin = createAdminClient();
 
   const { data: started, error: startError } = await admin.rpc("start_generation", {
     p_user_id: userId,
     p_prompt: prompt,
-    p_model: DEFAULT_MODEL,
-    p_aspect: "1:1",
+    p_model: input.model,
+    p_aspect: aspect,
     p_batch: batch,
     p_cost_credits: model.credits * batch,
     p_est_usd: model.estUsd * batch,
@@ -87,7 +107,7 @@ export async function POST(request: Request) {
     if (process.env.NODE_ENV === "development" && request.headers.get("x-test-fail-fal") === "1") {
       throw new Error("forced fal failure (test)");
     }
-    const images = await generateSchnell(prompt, AbortSignal.timeout(FAL_TIMEOUT_MS));
+    const images = await generateImages(input.model, prompt, aspect, batch, AbortSignal.timeout(FAL_TIMEOUT_MS));
     if (images.length !== batch) {
       throw new Error(`Expected ${batch} image(s), got ${images.length} (safety filter or provider)`);
     }

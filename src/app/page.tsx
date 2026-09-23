@@ -3,9 +3,11 @@ const swatches = [
   { name: "bg-1", className: "bg-bg-1" },
   { name: "bg-2", className: "bg-bg-2" },
   { name: "bg-4", className: "bg-bg-4" },
-  { name: "lime", className: "bg-lime" },
-  { name: "pink", className: "bg-pink" },
-  { name: "blue", className: "bg-blue" },
+  { name: "sky", className: "bg-brand-sky" },
+  { name: "violet", className: "bg-brand-violet" },
+  { name: "pink", className: "bg-brand-pink" },
+  { name: "peach", className: "bg-brand-peach" },
+  { name: "danger", className: "bg-danger" },
 ];
 
 export default function Home() {
@@ -18,7 +20,7 @@ export default function Home() {
       <h1 className="font-display text-display-sm uppercase sm:text-display">
         Type a prompt.
         <br />
-        <span className="text-lime">Get a real image.</span>
+        <span className="text-brand-gradient">Get a real image.</span>
       </h1>
 
       <p className="max-w-md text-base text-text-2">
@@ -30,7 +32,7 @@ export default function Home() {
         <span className="font-normal">Inter 400</span>
         <span className="font-medium">Inter 500</span>
         <span className="font-semibold">Inter 600</span>
-        <span className="font-semibold tabular-nums text-lime">0123456789</span>
+        <span className="font-semibold tabular-nums text-accent-text">0123456789</span>
       </p>
 
       <ul className="flex flex-wrap justify-center gap-2" aria-label="Color tokens">
@@ -42,7 +44,7 @@ export default function Home() {
         ))}
       </ul>
 
-      <div className="rounded-xl bg-lime px-6 py-3 text-base font-semibold text-lime-ink inset-shadow-lip">
+      <div className="rounded-xl bg-brand-gradient px-6 py-3 text-base font-semibold text-accent-ink inset-shadow-lip">
         Generate <span className="opacity-50 line-through">3</span>{" "}
         <span className="font-bold">2</span>
       </div>

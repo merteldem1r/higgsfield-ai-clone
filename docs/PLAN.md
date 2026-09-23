@@ -17,7 +17,7 @@
 - Auth modal UI: split carousel plus provider buttons and the 18+ checkbox. It opens on out-of-credits and on Login/Sign up. Providers show "coming soon" until P1. *A distinctive surface and the upsell moment.*
 - Assets page: grid, Image count, fanned empty state, lightbox + download. *Closes the loop and makes the product feel persistent.*
 - Explore home: condensed version with promo hero, tool tiles and a showcase strip of our own generations. *First impression and faithful structure.*
-- Dark design tokens (near-black, lime primary, pink promo, condensed uppercase headlines). Every page usable at phone width.
+- Dark design tokens (near-black, our own logo gradient + violet accent in place of lime, condensed uppercase headlines). Every page usable at phone width.
 - **README:** the thesis, what's real vs UI-only, how credits are enforced, known limitations, what's next. *A graded artifact.*
 - **45 minutes at the end to record the walkthrough.** *A graded artifact.*
 
