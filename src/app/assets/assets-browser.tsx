@@ -22,8 +22,10 @@ import {
   XIcon,
 } from "@/components/icons";
 import { Lightbox } from "@/components/lightbox";
+import { useT } from "@/components/locale-provider";
 import { DEFAULT_ASPECT, DEFAULT_MODEL, isAspectId, isModelId, type AspectId, type ModelId } from "@/lib/credits";
 import { download } from "@/lib/download";
+import { tParts, type MessageKey } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 
 const BUCKET = "generations";
@@ -52,7 +54,11 @@ type Asset = {
 
 type Filter = "all" | "favourites" | "image";
 
-const TITLES: Record<Filter, string> = { all: "All assets", favourites: "Favourites", image: "Images" };
+const TITLES: Record<Filter, MessageKey> = {
+  all: "assets.title.all",
+  favourites: "assets.title.favourites",
+  image: "assets.title.image",
+};
 
 // Mobile is always 2 columns; the slider sets the widest breakpoint's count. Full strings for Tailwind.
 const COLUMNS: Record<number, string> = {
@@ -101,6 +107,7 @@ async function loadAssets(): Promise<Asset[]> {
 export function AssetsBrowser() {
   const router = useRouter();
   const { account, openAuthModal } = useApp();
+  const t = useT();
   const [assets, setAssets] = useState<Asset[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -135,6 +142,7 @@ export function AssetsBrowser() {
   const needle = query.trim().toLowerCase();
   const visible = base.filter((a) => !needle || a.prompt.toLowerCase().includes(needle));
   const open = assets?.find((a) => a.id === openId) ?? null;
+  const memberNote = tParts(t, "assets.memberNote", "email");
 
   function reuse(asset: Asset) {
     // A draft only fills the composer on /image; it never starts a generation.
@@ -153,40 +161,40 @@ export function AssetsBrowser() {
       <aside className="shrink-0 lg:w-64">
         <div className="flex flex-col gap-4 rounded-2xl border border-border-2 bg-bg-1 p-3 lg:sticky lg:top-28">
           <label className="relative block">
-            <span className="sr-only">Search your images by prompt</span>
+            <span className="sr-only">{t("assets.searchLabel")}</span>
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-text-3" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search prompts"
+              placeholder={t("assets.searchPlaceholder")}
               className="h-10 w-full rounded-lg border border-border-3 bg-bg-3 pr-3 pl-9 text-sm text-text-1 outline-none placeholder:text-text-placeholder focus-visible:border-accent/50"
             />
           </label>
 
-          <nav aria-label="Library" className="flex flex-col gap-4">
+          <nav aria-label={t("assets.library")} className="flex flex-col gap-4">
             <ul className="flex gap-1 max-lg:overflow-x-auto lg:flex-col">
-              <SidebarItem icon={<BoxIcon />} label="Assets" count={count} active={filter === "all"} onClick={() => setFilter("all")} />
+              <SidebarItem icon={<BoxIcon />} label={t("nav.assets")} count={count} active={filter === "all"} onClick={() => setFilter("all")} />
               <SidebarItem
                 icon={<HeartIcon />}
-                label="Favourites"
+                label={t("assets.title.favourites")}
                 count={assets ? favourites.length : null}
                 active={filter === "favourites"}
                 onClick={() => setFilter("favourites")}
               />
             </ul>
             <div className="max-lg:hidden">
-              <p className="px-2.5 pb-1.5 text-xs font-medium text-text-3">Tools</p>
+              <p className="px-2.5 pb-1.5 text-xs font-medium text-text-3">{t("assets.tools")}</p>
               <ul className="flex flex-col gap-1">
                 <SidebarItem
                   icon={<ImageIcon />}
-                  label="Image"
+                  label={t("nav.image")}
                   count={count}
                   active={filter === "image"}
                   onClick={() => setFilter("image")}
                 />
-                <SidebarItem icon={<VideoIcon />} label="Video" soon />
-                <SidebarItem icon={<AudioIcon />} label="Audio" soon />
+                <SidebarItem icon={<VideoIcon />} label={t("nav.video")} soon />
+                <SidebarItem icon={<AudioIcon />} label={t("nav.audio")} soon />
               </ul>
             </div>
           </nav>
@@ -194,18 +202,19 @@ export function AssetsBrowser() {
           {/* Anonymous galleries live in this browser's session; saying so beats a surprise after clearing cookies. */}
           {account?.status === "member" ? (
             <div className="rounded-xl bg-bg-2 p-3 text-xs leading-5 text-text-2 max-lg:hidden">
-              Saved to your account. Log in as <span className="break-all text-text-1">{account.email}</span> to see it on
-              any device.
+              {memberNote[0]}
+              <span className="break-all text-text-1">{account.email}</span>
+              {memberNote[1]}
             </div>
           ) : (
             <div className="rounded-xl bg-bg-2 p-3 text-xs leading-5 text-text-2 max-lg:hidden">
-              Saved in this browser. Sign up to keep your gallery on every device.
+              {t("assets.guestNote")}
               <button
                 type="button"
                 onClick={() => openAuthModal("signup")}
                 className="mt-1 block font-semibold text-accent-text transition-colors duration-150 hover:text-accent-hover"
               >
-                Sign up
+                {t("auth.signup")}
               </button>
             </div>
           )}
@@ -216,18 +225,20 @@ export function AssetsBrowser() {
         <div className="mb-4 flex min-h-10 items-center justify-between gap-4">
           <div className="flex items-baseline gap-2.5">
             <h1 id="assets-title" className="text-xl font-semibold tracking-[-0.01em]">
-              {TITLES[filter]}
+              {t(TITLES[filter])}
             </h1>
             {base.length > 0 && (
               <span className="text-sm text-text-2 tabular-nums">
-                {needle ? `${visible.length} of ${base.length}` : base.length} {base.length === 1 ? "image" : "images"}
+                {needle
+                  ? t("assets.countFiltered", { shown: visible.length, n: base.length })
+                  : t("assets.count", { n: base.length })}
               </span>
             )}
           </div>
           {count !== null && count > 0 && (
             <label className="flex h-10 items-center gap-3 rounded-lg border border-border-2 bg-bg-1 px-3 max-lg:hidden">
               <GridIcon className="size-4 text-text-2" />
-              <span className="sr-only">Columns</span>
+              <span className="sr-only">{t("assets.columns")}</span>
               <input
                 type="range"
                 min={2}
@@ -243,13 +254,13 @@ export function AssetsBrowser() {
         </div>
 
         {failed ? (
-          <State title="Couldn't load your gallery" text="Check your connection and try again.">
+          <State title={t("assets.failed.title")} text={t("assets.failed.text")}>
             <button type="button" onClick={retry} className={WHITE_BUTTON}>
-              Try again
+              {t("thread.tryAgain")}
             </button>
           </State>
         ) : assets === null ? (
-          <ul aria-label="Loading your images" className={`${COLUMNS[columns]} gap-1.5`}>
+          <ul aria-label={t("assets.loading")} className={`${COLUMNS[columns]} gap-1.5`}>
             {SKELETON.map((aspect, i) => (
               <li
                 key={i}
@@ -260,30 +271,30 @@ export function AssetsBrowser() {
         ) : assets.length === 0 ? (
           <State
             stack
-            title="Your generations will appear here"
-            text="Every image you make is saved here automatically."
+            title={t("assets.empty.title")}
+            text={t("assets.empty.text")}
           >
             <Link href="/image" className={WHITE_BUTTON}>
               <SparkleIcon className="size-4" />
-              Generate
+              {t("composer.generate")}
             </Link>
           </State>
         ) : base.length === 0 ? (
-          <State title="No favourites yet" text="Tap the heart on any image to keep it here.">
+          <State title={t("assets.noFav.title")} text={t("assets.noFav.text")}>
             <button type="button" onClick={() => setFilter("all")} className={WHITE_BUTTON}>
               <BoxIcon className="size-4" />
-              Show all assets
+              {t("assets.showAll")}
             </button>
           </State>
         ) : visible.length === 0 ? (
-          <State title="No images match that search" text={`Nothing in your prompts contains "${query.trim()}".`}>
+          <State title={t("assets.noMatch.title")} text={t("assets.noMatch.text", { query: query.trim() })}>
             <button type="button" onClick={() => setQuery("")} className={WHITE_BUTTON}>
               <XIcon className="size-4" />
-              Clear search
+              {t("assets.clearSearch")}
             </button>
           </State>
         ) : (
-          <ul aria-label="Your images" className={`${COLUMNS[columns]} gap-1.5`}>
+          <ul aria-label={t("assets.yourImages")} className={`${COLUMNS[columns]} gap-1.5`}>
             {visible.map((asset) => (
               <AssetTile
                 key={asset.id}
@@ -328,6 +339,7 @@ function SidebarItem({
   soon?: boolean;
   onClick?: () => void;
 }) {
+  const t = useT();
   return (
     <li className="shrink-0">
       <button
@@ -343,7 +355,7 @@ function SidebarItem({
         <span className="flex-1 text-left">{label}</span>
         {soon ? (
           <span className="flex h-4 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold text-accent-text">
-            Soon
+            {t("nav.soon")}
           </span>
         ) : (
           <span className="min-w-5 rounded-sm bg-bg-2 px-1.5 text-center text-xs text-text-2 tabular-nums">
@@ -397,6 +409,7 @@ function AssetTile({
   onFavourite: (favourite: boolean) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const t = useT();
   const sized = asset.width !== null && asset.height !== null;
 
   return (
@@ -414,7 +427,7 @@ function AssetTile({
             sized ? "" : ASPECT_CLASS[asset.aspect]
           } ${loaded ? "opacity-100" : "opacity-0"}`}
         />
-        <button type="button" onClick={onOpen} aria-label="Open image" className="absolute inset-0 cursor-zoom-in" />
+        <button type="button" onClick={onOpen} aria-label={t("tile.open")} className="absolute inset-0 cursor-zoom-in" />
         {/* A hearted image keeps its heart showing, so favourites are visible at a glance in "All assets". */}
         <div
           className={`absolute top-2 right-2 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100 ${
@@ -426,14 +439,14 @@ function AssetTile({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2.5 bg-linear-to-t from-black/85 via-black/45 to-transparent p-3 pt-12 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:bg-none pointer-coarse:pt-3 pointer-coarse:opacity-100">
           <p className="line-clamp-2 text-xs leading-4 text-white/90 pointer-coarse:hidden">{asset.prompt}</p>
           <div className="flex gap-1.5">
-            <button type="button" onClick={onReuse} title="Open in Image with this prompt" className={TILE_BUTTON}>
+            <button type="button" onClick={onReuse} title={t("assets.reuseTitle")} className={TILE_BUTTON}>
               <ReuseIcon className="size-3.5" />
-              Reuse
+              {t("thread.reuse")}
             </button>
             <button
               type="button"
               onClick={() => void download(asset.url, `image-${asset.id.slice(0, 8)}.jpg`)}
-              aria-label="Download"
+              aria-label={t("tile.download")}
               className={`${TILE_BUTTON} px-2`}
             >
               <DownloadIcon className="size-3.5" />

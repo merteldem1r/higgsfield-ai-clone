@@ -6,7 +6,7 @@ import { AuthModal } from "@/components/auth-modal";
 import { LocaleProvider } from "@/components/locale-provider";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { BANNER_STORAGE_KEY } from "@/components/promo-banner-key";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
 
 const barlowCondensed = Barlow_Condensed({
@@ -21,10 +21,10 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Higgsfield AI Clone - Mert Eldemir",
-  description: "Type a prompt, get a real AI image. No signup.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: "Higgsfield AI Clone - Mert Eldemir", description: t("meta.description") };
+}
 
 // cover: lets env(safe-area-inset-bottom) report the iPhone home indicator, so the tab bar can clear it.
 export const viewport: Viewport = { viewportFit: "cover" };

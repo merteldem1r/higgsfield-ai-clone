@@ -175,7 +175,7 @@ function AssistantTurn({
 
         {introDone && settled && (
           <StreamedText
-            text={rejected ? rejectionLine(run, t, member) : outroLine(run, locale, t)}
+            text={rejected ? rejectionLine(run, locale, t, member) : outroLine(run, locale, t)}
             animate={animate}
             onDone={() => setOutroDone(true)}
           />

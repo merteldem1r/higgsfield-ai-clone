@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { useApp } from "@/components/app-provider";
 import { CheckIcon, SparkleIcon, XIcon } from "@/components/icons";
+import { useT } from "@/components/locale-provider";
 import { MODELS } from "@/lib/credits";
+import { tParts } from "@/lib/i18n";
 
 import { ANNUAL_DISCOUNT, imagesFor, PLANS, priceFor, type Plan } from "./plans-data";
 
@@ -20,12 +22,12 @@ const CTA: Record<Plan["id"], string> = {
   ultra: "bg-brand-pink text-accent-ink inset-shadow-lip hover:brightness-110 active:translate-y-px active:inset-shadow-lip-pressed",
 };
 
-const USD = new Intl.NumberFormat("en-US");
-
 export function Plans() {
   const [annual, setAnnual] = useState(true);
   const { showToast } = useApp();
-  const percentOff = `${Math.round(ANNUAL_DISCOUNT * 100)}% OFF`;
+  const t = useT();
+  const percent = Math.round(ANNUAL_DISCOUNT * 100);
+  const percentOff = t("pricing.off", { n: percent });
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,11 +36,11 @@ export function Plans() {
           type="button"
           role="switch"
           aria-checked={annual}
-          aria-label="Bill annually"
+          aria-label={t("pricing.billAnnually")}
           onClick={() => setAnnual((a) => !a)}
           className="flex h-10 items-center gap-3 rounded-lg border border-border-3 bg-bg-1 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-3"
         >
-          <span className={annual ? "text-text-2" : "text-text-1"}>Monthly</span>
+          <span className={annual ? "text-text-2" : "text-text-1"}>{t("pricing.monthly")}</span>
           <span
             className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${annual ? "bg-brand-gradient" : "bg-bg-5"}`}
           >
@@ -48,7 +50,7 @@ export function Plans() {
               }`}
             />
           </span>
-          <span className={annual ? "text-text-1" : "text-text-2"}>Annual</span>
+          <span className={annual ? "text-text-1" : "text-text-2"}>{t("pricing.annual")}</span>
           <Badge className="bg-brand-pink text-accent-ink">{percentOff}</Badge>
         </button>
       </div>
@@ -58,25 +60,27 @@ export function Plans() {
           const price = priceFor(plan, annual);
           const images = imagesFor(plan.credits);
           const yearlySaving = (plan.monthlyUsd - price) * 12;
+          const saveYear = tParts(t, "pricing.saveYear", "amount");
 
           return (
             <li key={plan.id} className={`flex flex-col rounded-2xl border p-5 ${CARD[plan.id]}`}>
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-display text-[28px] leading-7 uppercase">{plan.name}</h3>
                 {annual && <Badge className="bg-brand-pink text-accent-ink">{percentOff}</Badge>}
-                {plan.badge === "popular" && <Badge className="bg-brand-gradient text-accent-ink">Most popular</Badge>}
-                {plan.badge === "best-value" && <Badge className="bg-sky text-white">Best value</Badge>}
+                {plan.badge === "popular" && <Badge className="bg-brand-gradient text-accent-ink">{t("pricing.popular")}</Badge>}
+                {plan.badge === "best-value" && <Badge className="bg-sky text-white">{t("pricing.bestValue")}</Badge>}
               </div>
-              <p className="mt-1.5 text-sm text-text-2">{plan.tagline}</p>
+              <p className="mt-1.5 text-sm text-text-2">{t(plan.tagline)}</p>
 
               <div className="mt-5 rounded-xl bg-black/25 p-4 ring-1 ring-white/5">
                 <p className="flex items-center gap-2 text-[15px] font-semibold">
                   <SparkleIcon gradient className="size-4" />
-                  {USD.format(plan.credits)} credits / month
+                  {t("pricing.perMonth", { n: plan.credits })}
                 </p>
                 <p className="mt-2 pl-6 text-xs leading-5 text-text-2">
-                  ≈ {USD.format(images.schnell)} {MODELS["flux-schnell"].label} images
-                  <br />≈ {USD.format(images.dev)} {MODELS["flux-dev"].label} images
+                  {t("pricing.approxImages", { n: images.schnell, model: MODELS["flux-schnell"].label })}
+                  <br />
+                  {t("pricing.approxImages", { n: images.dev, model: MODELS["flux-dev"].label })}
                 </p>
               </div>
 
@@ -85,7 +89,10 @@ export function Plans() {
                   <s className="font-display text-[32px] leading-8 text-brand-pink decoration-2">${plan.monthlyUsd}</s>
                 )}
                 <span className="font-display text-[40px] leading-10">${price}</span>
-                <span className="text-sm text-text-2">/ month{annual ? ", billed annually" : ""}</span>
+                <span className="text-sm text-text-2">
+                  {t("pricing.month")}
+                  {annual ? t("pricing.billedAnnually") : ""}
+                </span>
               </p>
 
               <button
@@ -93,20 +100,22 @@ export function Plans() {
                 onClick={() =>
                   showToast({
                     tone: "neutral",
-                    text: "Payments aren't live in this demo. Your free credits are still yours to use.",
+                    text: t("pricing.paymentsToast"),
                   })
                 }
                 className={`mt-4 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-[background-color,filter,translate] duration-150 ${CTA[plan.id]}`}
               >
-                Get {plan.name}
+                {t("pricing.get", { plan: plan.name })}
               </button>
               <p className="mt-2.5 text-center text-xs text-text-2">
                 {annual ? (
                   <>
-                    <span className="font-semibold text-text-1">Save ${yearlySaving}</span> a year compared to monthly
+                    {saveYear[0]}
+                    <span className="font-semibold text-text-1">{t("pricing.saveAmount", { n: yearlySaving })}</span>
+                    {saveYear[1]}
                   </>
                 ) : (
-                  <>Switch to annual to save {Math.round(ANNUAL_DISCOUNT * 100)}%</>
+                  t("pricing.switchAnnual", { n: percent })
                 )}
               </p>
 
@@ -121,7 +130,7 @@ export function Plans() {
                     ) : (
                       <XIcon className="size-4 shrink-0" />
                     )}
-                    {feature.label}
+                    {t(feature.label)}
                   </li>
                 ))}
               </ul>

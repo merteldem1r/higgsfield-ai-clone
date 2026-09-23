@@ -6,6 +6,7 @@ import { useCallback, useState } from "react";
 import { stashDraft } from "@/components/composer/handoff";
 import { ReuseIcon } from "@/components/icons";
 import { Lightbox } from "@/components/lightbox";
+import { useT } from "@/components/locale-provider";
 import { ASPECTS, DEFAULT_ASPECT, DEFAULT_MODEL, isModelId, type AspectId } from "@/lib/credits";
 
 import type { CommunityItem } from "./feed";
@@ -36,6 +37,7 @@ const LAYOUTS = [
 export function CommunityGrid({ items }: { items: CommunityItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState<CommunityItem | null>(null);
+  const t = useT();
 
   function recreate(item: CommunityItem, aspect: AspectId) {
     // A draft only fills the composer on /image; it never starts a generation.
@@ -48,7 +50,7 @@ export function CommunityGrid({ items }: { items: CommunityItem[] }) {
       {LAYOUTS.map(({ columns, className }) => (
         <div key={columns} className={`${className} items-start gap-1.5`}>
           {Array.from({ length: columns }, (_, column) => (
-            <ul key={column} aria-label={`Community images, column ${column + 1}`} className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <ul key={column} aria-label={t("community.column", { n: column + 1 })} className="flex min-w-0 flex-1 flex-col gap-1.5">
               {items
                 .filter((_, i) => i % columns === column)
                 .map((item) => (
@@ -78,6 +80,7 @@ function CommunityTile({
   onRecreate: (aspect: AspectId) => void;
 }) {
   const [aspect, setAspect] = useState<AspectId | null>(null);
+  const t = useT();
   // The page is server-rendered, so on a hard refresh a cached image can finish loading before hydration
   // attaches onLoad, and that event is gone. The ref checks for an already-loaded image on mount too.
   const measure = useCallback((img: HTMLImageElement | null) => {
@@ -98,7 +101,7 @@ function CommunityTile({
             aspect ? "opacity-100" : "opacity-0"
           }`}
         />
-        <button type="button" onClick={onOpen} aria-label="Open image" className="absolute inset-0 cursor-zoom-in" />
+        <button type="button" onClick={onOpen} aria-label={t("tile.open")} className="absolute inset-0 cursor-zoom-in" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-start gap-2.5 bg-linear-to-t from-black/85 via-black/45 to-transparent p-3 pt-14 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:bg-none pointer-coarse:pt-3 pointer-coarse:opacity-100">
           <div className="flex translate-y-2 flex-col gap-1 transition-[translate] duration-150 group-focus-within:translate-y-0 group-hover:translate-y-0 motion-reduce:translate-y-0 pointer-coarse:hidden">
             <p className="line-clamp-3 text-xs leading-4 text-white/90">{item.prompt}</p>
@@ -110,7 +113,7 @@ function CommunityTile({
             className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-md bg-white/15 px-3 text-xs font-semibold text-white backdrop-blur-md transition-colors duration-150 hover:bg-white/25"
           >
             <ReuseIcon className="size-3.5" />
-            Recreate
+            {t("home.recreate")}
           </button>
         </div>
       </div>

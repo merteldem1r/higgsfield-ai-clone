@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { FavouriteButton } from "./favourite-button";
 import { XIcon } from "./icons";
+import { useT } from "./locale-provider";
 
 export type LightboxItem = { image: { url: string }; prompt: string };
 
@@ -18,6 +19,7 @@ export function Lightbox({
   favourite?: { value: boolean; onChange: (favourite: boolean) => void };
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const t = useT();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -33,7 +35,7 @@ export function Lightbox({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      aria-label="Image preview"
+      aria-label={t("lightbox.label")}
       className="m-auto max-h-none max-w-none bg-transparent p-0 backdrop:bg-overlay open:animate-fade-in"
     >
       {item && (
@@ -58,7 +60,7 @@ export function Lightbox({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close preview"
+        aria-label={t("lightbox.close")}
         className="fixed top-4 right-4 flex size-8 items-center justify-center rounded-full bg-bg-3 text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1"
       >
         <XIcon className="size-4" />

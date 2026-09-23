@@ -4,7 +4,7 @@ import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "reac
 
 import { useApp } from "@/components/app-provider";
 import { AspectIcon, MinusIcon, PlusIcon, SparkleIcon, SpinnerIcon } from "@/components/icons";
-import { useLocale } from "@/components/locale-provider";
+import { useT } from "@/components/locale-provider";
 import {
   ASPECTS,
   BATCH_MAX,
@@ -63,7 +63,7 @@ type Props = {
 
 export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }: Props) {
   const { credits, openAuthModal, showToast } = useApp();
-  const { locale, t } = useLocale();
+  const t = useT();
   // Model names stay as written; only the one-line description is translated.
   const modelOptions: ChipOption<ModelId>[] = MODEL_IDS.map((id) => ({
     value: id,
@@ -171,7 +171,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
               if (after > MAX_PROMPT_LENGTH) {
                 showToast({
                   tone: "neutral",
-                  text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH.toLocaleString(locale) }),
+                  text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }),
                 });
               }
             }}

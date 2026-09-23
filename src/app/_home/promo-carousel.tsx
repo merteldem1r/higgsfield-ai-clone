@@ -10,34 +10,33 @@ import type { MessageKey } from "@/lib/i18n";
 
 const ADVANCE_MS = 6000;
 
-// Alt text stays English for now: it describes our own showcase images, not UI.
-const SLIDES: { title: MessageKey; tagline: MessageKey; alt: string; src: string; href: string }[] = [
+const SLIDES: { title: MessageKey; tagline: MessageKey; alt: MessageKey; src: string; href: string }[] = [
   {
     title: "home.slide.dev.title",
     tagline: "home.slide.dev.text",
     src: "/showcase/g12.jpg",
-    alt: "A futuristic white train station in soft morning light",
+    alt: "alt.carousel.station",
     href: "/image?model=flux-dev",
   },
   {
     title: "home.slide.free.title",
     tagline: "home.slide.free.text",
     src: "/showcase/g08.jpg",
-    alt: "A desert canyon road at golden hour",
+    alt: "alt.carousel.canyon",
     href: "/image",
   },
   {
     title: "home.slide.batch.title",
     tagline: "home.slide.batch.text",
     src: "/showcase/g04.jpg",
-    alt: "An empty neon-lit alley in the rain",
+    alt: "alt.carousel.alley",
     href: "/image",
   },
   {
     title: "home.slide.aspect.title",
     tagline: "home.slide.aspect.text",
     src: "/showcase/g01.jpg",
-    alt: "Aerial view of a river through an autumn forest",
+    alt: "alt.carousel.river",
     href: "/image",
   },
 ];
@@ -95,7 +94,7 @@ export function PromoCarousel() {
               <div className="relative aspect-video overflow-hidden rounded-xl bg-bg-2">
                 <Image
                   src={slide.src}
-                  alt={slide.alt}
+                  alt={t(slide.alt)}
                   fill
                   sizes="(min-width: 1024px) 31vw, (min-width: 640px) 60vw, 85vw"
                   preload={i < 2}

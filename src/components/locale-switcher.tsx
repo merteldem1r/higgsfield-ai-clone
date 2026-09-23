@@ -51,11 +51,18 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
         aria-controls={menuId}
         aria-label={`${t("locale.label")}: ${LOCALE_NAMES[locale]}`}
         onClick={() => setOpen((o) => !o)}
-        className={`flex size-8 items-center justify-center rounded-md bg-bg-3 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 ${
+        className={`relative flex size-8 items-center justify-center rounded-md bg-bg-3 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 ${
           open ? "text-text-1" : "text-text-2"
         }`}
       >
         <GlobeIcon className="size-4" />
+        {/* A language code, not a flag: flags name countries, and English or Russian don't belong to one. */}
+        <span
+          aria-hidden
+          className="absolute -right-1.5 -bottom-1.5 rounded-xs bg-bg-5 px-1 text-[9px] leading-3 font-bold text-text-1 uppercase ring-2 ring-bg-0"
+        >
+          {locale}
+        </span>
       </button>
 
       {open && (

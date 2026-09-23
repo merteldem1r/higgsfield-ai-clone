@@ -1,11 +1,18 @@
+"use client";
+
 import Image from "next/image";
 
+import type { MessageKey } from "@/lib/i18n";
+
+import { useT } from "./locale-provider";
+
 // Our own Flux Dev generations (3:4), see public/showcase/.
-const PHOTOS = [
-  { src: "/showcase/01.jpg", alt: "Jazz trumpeter in a smoky bar" },
-  { src: "/showcase/02.jpg", alt: "Couple under string lights on a rooftop" },
-  { src: "/showcase/03.jpg", alt: "Woman in a red phone booth at night" },
-  { src: "/showcase/04.jpg", alt: "Man laughing in a cinema seat" },
+// Client only for the translated alt text; it is used from both server pages and client galleries.
+const PHOTOS: { src: string; alt: MessageKey }[] = [
+  { src: "/showcase/01.jpg", alt: "alt.stack.trumpeter" },
+  { src: "/showcase/02.jpg", alt: "alt.stack.couple" },
+  { src: "/showcase/03.jpg", alt: "alt.stack.booth" },
+  { src: "/showcase/04.jpg", alt: "alt.stack.cinema" },
 ];
 
 // Full class strings so Tailwind can see them. Hover widens the fan by 3° each way.
@@ -23,6 +30,7 @@ const SIZE = {
 
 export function FannedStack({ size = "hero" }: { size?: keyof typeof SIZE }) {
   const { box, px } = SIZE[size];
+  const t = useT();
   return (
     <div className="group flex items-center justify-center">
       {PHOTOS.map((photo, i) => (
@@ -30,7 +38,7 @@ export function FannedStack({ size = "hero" }: { size?: keyof typeof SIZE }) {
           key={photo.src}
           className={`${box} ${POSE[i]} relative -translate-y-1 overflow-hidden border-2 border-white/18 shadow-photo transition-[rotate] duration-500 ease-out motion-safe:animate-fan-in`}
         >
-          <Image src={photo.src} alt={photo.alt} fill sizes={`${px}px`} className="object-cover" preload={size === "hero"} />
+          <Image src={photo.src} alt={t(photo.alt)} fill sizes={`${px}px`} className="object-cover" preload={size === "hero"} />
         </div>
       ))}
     </div>

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 
+import { getT } from "@/lib/i18n/server";
+
 import { AssetsBrowser } from "./assets-browser";
 
-export const metadata: Metadata = { title: "Assets — Higgsfield AI Clone" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: `${t("nav.assets")} — Higgsfield AI Clone` };
+}
 
 export default function AssetsPage() {
   return (

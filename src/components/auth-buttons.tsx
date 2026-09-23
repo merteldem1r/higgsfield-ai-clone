@@ -6,12 +6,13 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
 import { logOut } from "@/lib/supabase/session";
 
-import { LOCALE_NAMES } from "@/lib/i18n";
+import { LOCALE_NAMES, LOCALES } from "@/lib/i18n";
 
 import { useApp } from "./app-provider";
 import {
   BoxIcon,
   BrandGradient,
+  CheckIcon,
   ChevronRightIcon,
   CrownIcon,
   GlobeIcon,
@@ -58,7 +59,7 @@ export function AuthButtons() {
 
 function AccountMenu({ email, handle }: { email: string; handle: string | null }) {
   const { credits } = useApp();
-  const { locale, t } = useLocale();
+  const { locale, t, setLocale } = useLocale();
   const creditsHelp = t("account.creditsHelp", {
     a: MODELS["flux-schnell"].label,
     aCost: MODELS["flux-schnell"].credits,
@@ -66,6 +67,10 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
     bCost: MODELS["flux-dev"].credits,
   });
   const [open, setOpen] = useState(false);
+  const [languagesOpen, setLanguagesOpen] = useState(false);
+  const languagesId = useId();
+  // Reopening starts collapsed, so the card keeps its usual height.
+  if (!open && languagesOpen) setLanguagesOpen(false);
   const [leaving, setLeaving] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -204,12 +209,50 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               <MenuLink href="/community" icon={<UsersIcon />} onClick={close}>
                 {t("nav.community")}
               </MenuLink>
-              {/* A label, not a picker: the globe in the header (or the mobile menu) switches it. */}
-              <div className="flex h-10 items-center gap-3 px-2.5 text-sm text-text-1 [&>svg]:size-4.5 [&>svg]:text-text-2">
+              {/* Expands in place rather than as a flyout: a flyout would leave the card and trip the hover close. */}
+              <button
+                type="button"
+                role="menuitem"
+                aria-expanded={languagesOpen}
+                aria-controls={languagesId}
+                onClick={() => setLanguagesOpen((v) => !v)}
+                className="flex h-10 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm text-text-1 transition-colors duration-150 hover:bg-bg-3 [&>svg]:size-4.5 [&>svg]:text-text-2"
+              >
                 <GlobeIcon />
                 <span className="flex-1">{t("locale.label")}</span>
                 <span className="text-text-2">{LOCALE_NAMES[locale]}</span>
-              </div>
+                <ChevronRightIcon
+                  className={`size-4! transition-transform duration-150 ${languagesOpen ? "rotate-90" : ""}`}
+                />
+              </button>
+              {languagesOpen && (
+                <div
+                  id={languagesId}
+                  role="group"
+                  aria-label={t("locale.label")}
+                  className="flex flex-col pl-7.5 motion-safe:animate-fade-in"
+                >
+                  {LOCALES.map((code) => {
+                    const checked = code === locale;
+                    return (
+                      <button
+                        key={code}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={checked}
+                        lang={code}
+                        onClick={() => setLocale(code)}
+                        className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm transition-colors duration-150 hover:bg-bg-3 ${
+                          checked ? "text-text-1" : "text-text-2 hover:text-text-1"
+                        }`}
+                      >
+                        <span className="flex-1">{LOCALE_NAMES[code]}</span>
+                        <CheckIcon className={`size-4 shrink-0 text-accent-text ${checked ? "" : "invisible"}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="my-1.5 h-px bg-border-1" />

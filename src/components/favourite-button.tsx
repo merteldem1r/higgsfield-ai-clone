@@ -4,6 +4,7 @@ import { useRef } from "react";
 
 import { useApp } from "./app-provider";
 import { HeartIcon } from "./icons";
+import { useT } from "./locale-provider";
 
 async function saveFavourite(assetId: string, favourite: boolean): Promise<boolean> {
   try {
@@ -26,6 +27,7 @@ async function saveFavourite(assetId: string, favourite: boolean): Promise<boole
  */
 export function useFavourite(apply: (assetId: string, favourite: boolean) => void) {
   const { showToast } = useApp();
+  const t = useT();
   const wanted = useRef(new Map<string, boolean>());
   const confirmed = useRef(new Map<string, boolean>());
   const inFlight = useRef(new Set<string>());
@@ -44,7 +46,7 @@ export function useFavourite(apply: (assetId: string, favourite: boolean) => voi
           const last = confirmed.current.get(assetId) ?? current;
           wanted.current.set(assetId, last);
           apply(assetId, last);
-          showToast({ tone: "danger", text: "Couldn't update favourites. Try again." });
+          showToast({ tone: "danger", text: t("fav.error") });
           return;
         }
         confirmed.current.set(assetId, target);
@@ -73,12 +75,13 @@ export function FavouriteButton({
   tone?: keyof typeof TONE;
   className?: string;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={() => onChange(!favourite)}
       aria-pressed={favourite}
-      aria-label={favourite ? "Remove from favourites" : "Add to favourites"}
+      aria-label={favourite ? t("fav.remove") : t("fav.add")}
       className={`flex items-center justify-center transition-colors duration-150 ${TONE[tone]} ${className}`}
     >
       <HeartIcon

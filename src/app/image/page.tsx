@@ -6,7 +6,10 @@ import { getT } from "@/lib/i18n/server";
 
 import { ImageStudio } from "./image-studio";
 
-export const metadata: Metadata = { title: "Image — Higgsfield AI Clone" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: `${t("nav.image")} — Higgsfield AI Clone` };
+}
 
 export default function ImagePage() {
   return <ImageStudio hero={<ImageHero />} />;

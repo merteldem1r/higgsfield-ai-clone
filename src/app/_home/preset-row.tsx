@@ -2,12 +2,15 @@
 
 import Image from "next/image";
 
+import { useT } from "@/components/locale-provider";
+
 import { useHomeComposer } from "./home-composer";
 import { PRESETS, presetPrompt } from "./presets";
 import { Reveal } from "./reveal";
 
 export function PresetRow() {
   const { loadPrompt } = useHomeComposer();
+  const t = useT();
 
   return (
     <Reveal
@@ -20,7 +23,7 @@ export function PresetRow() {
             type="button"
             // Subject pre-selected: typing replaces it and keeps the style.
             onClick={() => loadPrompt(presetPrompt(preset), { select: [0, preset.subject.length] })}
-            aria-label={`Use the ${preset.name} style`}
+            aria-label={t("preset.use", { name: t(preset.name) })}
             className="group relative block aspect-3/4 w-full overflow-hidden rounded-lg bg-bg-2 text-left"
           >
             <Image
@@ -32,7 +35,7 @@ export function PresetRow() {
             />
             <span className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-white/8 ring-inset transition-shadow duration-150 group-hover:ring-accent/60" />
             <span className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-3 pt-12">
-              <span className="block font-display text-h3 text-white uppercase">{preset.name}</span>
+              <span className="block font-display text-h3 text-white uppercase">{t(preset.name)}</span>
             </span>
           </button>
         </li>

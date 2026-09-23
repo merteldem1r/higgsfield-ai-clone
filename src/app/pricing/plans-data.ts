@@ -1,4 +1,5 @@
 import { MODELS } from "@/lib/credits";
+import type { MessageKey } from "@/lib/i18n";
 
 // Illustrative pricing for the demo: no checkout exists. The image counts are derived from the real
 // per-model costs, so they stay right if a cost changes.
@@ -6,57 +7,58 @@ export const ANNUAL_DISCOUNT = 0.3;
 
 export type Plan = {
   id: "starter" | "plus" | "ultra";
+  /** Plan names are product names and stay as written in every language. */
   name: string;
-  tagline: string;
+  tagline: MessageKey;
   monthlyUsd: number;
   credits: number;
   badge?: "popular" | "best-value";
-  features: { label: string; included: boolean }[];
+  features: { label: MessageKey; included: boolean }[];
 };
 
 export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    tagline: "For trying ideas every week",
+    tagline: "plan.starter.tagline",
     monthlyUsd: 12,
     credits: 400,
     features: [
-      { label: "Flux Schnell and Flux Dev", included: true },
-      { label: "Up to 4 images per prompt", included: true },
-      { label: "All five aspect ratios", included: true },
-      { label: "Private gallery and downloads", included: true },
-      { label: "Priority queue", included: false },
-      { label: "Early access to video", included: false },
+      { label: "plan.feature.models", included: true },
+      { label: "plan.feature.upTo4", included: true },
+      { label: "plan.feature.allAspects", included: true },
+      { label: "plan.feature.gallery", included: true },
+      { label: "plan.feature.priority", included: false },
+      { label: "plan.feature.earlyVideo", included: false },
     ],
   },
   {
     id: "plus",
     name: "Plus",
-    tagline: "For creating most days",
+    tagline: "plan.plus.tagline",
     monthlyUsd: 29,
     credits: 1200,
     badge: "popular",
     features: [
-      { label: "Everything in Starter", included: true },
-      { label: "Priority queue", included: true },
-      { label: "Early access to video", included: true },
-      { label: "Commercial use", included: true },
-      { label: "Batch presets", included: false },
+      { label: "plan.feature.everythingStarter", included: true },
+      { label: "plan.feature.priority", included: true },
+      { label: "plan.feature.earlyVideo", included: true },
+      { label: "plan.feature.commercial", included: true },
+      { label: "plan.feature.batchPresets", included: false },
     ],
   },
   {
     id: "ultra",
     name: "Ultra",
-    tagline: "For studios and heavy use",
+    tagline: "plan.ultra.tagline",
     monthlyUsd: 69,
     credits: 3600,
     badge: "best-value",
     features: [
-      { label: "Everything in Plus", included: true },
-      { label: "Fastest queue", included: true },
-      { label: "Batch presets", included: true },
-      { label: "Lowest cost per image", included: true },
+      { label: "plan.feature.everythingPlus", included: true },
+      { label: "plan.feature.fastest", included: true },
+      { label: "plan.feature.batchPresets", included: true },
+      { label: "plan.feature.lowestCost", included: true },
     ],
   },
 ];

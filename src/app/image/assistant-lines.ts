@@ -121,7 +121,7 @@ export function outroLine(run: Run, locale: Locale, t: T): string {
 }
 
 // Turns the API rejected before spending anything. Worded as the assistant, not as an error dialog.
-export function rejectionLine(run: Run, t: T, member = false): string {
+export function rejectionLine(run: Run, locale: Locale, t: T, member = false): string {
   const code = run.rejection?.code ?? "UNKNOWN";
   const cost = batchCost(run.request.model, run.request.batch).credits;
   switch (code) {
@@ -138,11 +138,18 @@ export function rejectionLine(run: Run, t: T, member = false): string {
     case "NETWORK":
       return t("assistant.reject.network");
     default:
-      // The server's message is English; it only shows for codes the switch above doesn't know.
-      return t("assistant.reject.unknown", {
-        message: run.rejection?.message ?? t("assistant.reject.unknownMessage"),
-      });
+      return t("assistant.reject.unknown", { message: fallbackMessage(run, locale, t) });
   }
+}
+
+// The API's messages are English (it's curl-tested as is), so other locales get a translated stand-in by code.
+function fallbackMessage(run: Run, locale: Locale, t: T): string {
+  const code = run.rejection?.code;
+  if (locale === "en" && run.rejection?.message) return run.rejection.message;
+  if (code === "UNAUTHENTICATED" || code === "NO_PROFILE") return t("assistant.err.session");
+  if (code === "INVALID_INPUT") return t("assistant.err.invalid");
+  if (code === "INTERNAL" || code === "NOT_PENDING") return t("assistant.err.internal");
+  return t("assistant.reject.unknownMessage");
 }
 
 export type FollowUp = { label: string; request: GenerateRequest; cost: number };
