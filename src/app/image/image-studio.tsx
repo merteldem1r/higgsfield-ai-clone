@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useApp } from "@/components/app-provider";
+import { Composer, type ComposerHandle } from "@/components/composer/composer";
+import { takeStashedGeneration } from "@/components/composer/handoff";
 import { batchCost, DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
 import { createClient } from "@/lib/supabase/client";
 
-import { Composer, type ComposerHandle } from "./composer";
 import { NoticeBar } from "./notice-bar";
 import { requestGeneration } from "./request-generation";
-import { ResultsGrid } from "./results-grid";
+import { RunFeed } from "./run-feed";
 import type { GenerateRequest, Notice, Run } from "./types";
 
 const BUCKET = "generations";
@@ -82,6 +83,8 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
   // The ref is the real lock: state updates are async, so a double click could slip past `inFlight`.
   const lock = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
+  // Set before a runs update that should end with the page scrolled to the newest run (the bottom).
+  const scrollToNewest = useRef<ScrollBehavior | null>(null);
   // Toast actions outlive the render that created them, so they call the latest generate.
   const latestGenerate = useRef<((request: GenerateRequest) => Promise<boolean>) | null>(null);
   const retry = (request: GenerateRequest) => void latestGenerate.current?.(request);
@@ -91,7 +94,8 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     loadHistory()
       .then((history) => {
         if (cancelled) return;
-        // Runs started before history arrived stay on top.
+        if (history.length > 0) scrollToNewest.current = "instant";
+        // runs is newest-first; runs started before history arrived stay the newest.
         setRuns((current) => [...current, ...history.filter((h) => !current.some((c) => c.id === h.id))]);
       })
       .catch((err) => console.error("Loading history failed", err));
@@ -99,6 +103,12 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!scrollToNewest.current) return;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollToNewest.current });
+    scrollToNewest.current = null;
+  }, [runs]);
 
   const updateRun = (id: string, patch: Partial<Run>) =>
     setRuns((current) => current.map((run) => (run.id === id ? { ...run, ...patch } : run)));
@@ -111,6 +121,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
 
     // The tile goes up before sign-in or the API: the first generation is the slowest path in the app.
     const id = crypto.randomUUID();
+    scrollToNewest.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
     setRuns((current) => [{ id, request, status: "pending", startedAt: Date.now(), images: [] }, ...current]);
 
     try {
@@ -158,6 +169,18 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     latestGenerate.current = generate;
   });
 
+  // Arrivals from /: ?model=… preselects the chip, and a Generate click made on / starts here at once.
+  // Must stay below the effect above, which is what fills latestGenerate on the first commit.
+  useEffect(() => {
+    const model = new URLSearchParams(window.location.search).get("model");
+    if (isModelId(model)) composerRef.current?.setSettings({ model });
+
+    const stashed = takeStashedGeneration();
+    if (!stashed) return;
+    composerRef.current?.setSettings({ model: stashed.model, aspect: stashed.aspect, batch: stashed.batch });
+    void latestGenerate.current?.(stashed);
+  }, []);
+
   function retryRun(run: Run) {
     if (lock.current || notice) return;
     removeRun(run.id);
@@ -166,22 +189,31 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-360 flex-1 flex-col px-4 pt-4 pb-72 sm:px-6 sm:pb-45">
+      {/* max-w-288 minus px-4 is 1120px: the feed shares the composer's column exactly. */}
+      <main className="mx-auto flex w-full max-w-288 flex-1 flex-col px-4 pt-6 pb-72 sm:pb-48">
         {runs.length === 0 ? (
           hero
         ) : (
-          <ResultsGrid
+          <RunFeed
             runs={runs}
             onRetry={retryRun}
             retryDisabled={inFlight || notice !== null}
-            onReusePrompt={(prompt) => composerRef.current?.setPrompt(prompt)}
+            onReuse={({ request: { prompt, ...settings } }) => {
+              composerRef.current?.setSettings(settings);
+              composerRef.current?.setPrompt(prompt);
+            }}
           />
         )}
       </main>
 
+      {/* Results fade into the page color behind the composer instead of cutting off hard at its edge. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-60 bg-linear-to-t from-bg-0 via-bg-0/85 to-transparent sm:h-44"
+      />
       <div className="fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-280 flex-col gap-2 sm:bottom-5">
         {notice && <NoticeBar notice={notice} onDismiss={() => setNotice(null)} />}
-        <Composer ref={composerRef} inFlight={inFlight} blocked={notice !== null} onGenerate={generate} />
+        <Composer ref={composerRef} inFlight={inFlight} blocked={notice !== null} onGenerate={generate} docked />
       </div>
     </>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthButtons } from "./auth-buttons";
 import { CreditsPill } from "./credits-pill";
 import { DiamondIcon, LogoMark } from "./icons";
 import { NavLinks } from "./nav-links";
@@ -28,19 +29,7 @@ export function AppHeader() {
             </span>
           </Link>
           <CreditsPill />
-          {/* Wired to the auth modal in step 4. */}
-          <button
-            type="button"
-            className="flex h-8 items-center rounded-md bg-accent-tint-2 px-3 text-sm font-medium text-accent-text transition-colors duration-150 hover:bg-accent-badge-bg max-sm:hidden"
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            className="flex h-8 items-center rounded-md bg-brand-gradient px-3 text-sm font-semibold text-accent-ink transition-[filter] duration-150 hover:brightness-110"
-          >
-            Sign up
-          </button>
+          <AuthButtons />
         </div>
       </nav>
       <ToastViewport />

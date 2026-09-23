@@ -6,6 +6,7 @@ import {
   BATCH_MIN,
   DEFAULT_ASPECT,
   DEFAULT_MODEL,
+  MAX_PROMPT_LENGTH,
   MODELS,
   isAspectId,
   isModelId,
@@ -19,7 +20,6 @@ import { createAdminClient, getUserId } from "@/lib/supabase/server";
 export const maxDuration = 60;
 
 const BUCKET = "generations";
-const MAX_PROMPT_LENGTH = 2000; // matches the generations.prompt check
 // Leaves room under maxDuration to fail the generation and refund before the platform kills us.
 const FAL_TIMEOUT_MS = 45_000;
 

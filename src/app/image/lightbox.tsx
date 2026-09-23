@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { XIcon } from "@/components/icons";
 
-import type { LightboxItem } from "./results-grid";
+import type { LightboxItem } from "./run-feed";
 
 export function Lightbox({ item, onClose }: { item: LightboxItem | null; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);

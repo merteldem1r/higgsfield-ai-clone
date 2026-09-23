@@ -1,6 +1,6 @@
-import type { AspectId, ModelId } from "@/lib/credits";
+import type { GenerateRequest } from "@/components/composer/types";
 
-export type GenerateRequest = { prompt: string; model: ModelId; aspect: AspectId; batch: number };
+export type { GenerateRequest };
 
 export type RunImage = { url: string; width: number | null; height: number | null };
 

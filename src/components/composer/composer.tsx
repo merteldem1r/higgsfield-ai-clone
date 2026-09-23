@@ -11,6 +11,7 @@ import {
   batchCost,
   DEFAULT_ASPECT,
   DEFAULT_MODEL,
+  MAX_PROMPT_LENGTH,
   MODELS,
   type AspectId,
   type ModelId,
@@ -19,9 +20,14 @@ import {
 import { CHIP_CLASS, ChipMenu, type ChipOption } from "./chip-menu";
 import type { GenerateRequest } from "./types";
 
-export type ComposerHandle = { setPrompt: (prompt: string) => void };
+export type ComposerHandle = {
+  /** `select` pre-selects a range (e.g. a preset's subject) so the first keystroke replaces it. */
+  setPrompt: (prompt: string, select?: [number, number]) => void;
+  setSettings: (settings: Partial<Omit<GenerateRequest, "prompt">>) => void;
+};
 
 const MAX_TEXTAREA_PX = 110; // 5 lines at 22px
+const COUNTER_FROM = MAX_PROMPT_LENGTH * 0.8;
 
 const GLYPH: Record<AspectId, string> = {
   "1:1": "h-3.5 w-3.5",
@@ -59,9 +65,11 @@ type Props = {
   /** A notice bar is up (budget, IP limit, paused): generating is blocked until it's dismissed. */
   blocked: boolean;
   onGenerate: (request: GenerateRequest) => Promise<boolean>;
+  /** Fixed over scrolling results (/image): a heavier shadow so content reads as passing underneath. */
+  docked?: boolean;
 };
 
-export function Composer({ ref, inFlight, blocked, onGenerate }: Props) {
+export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }: Props) {
   const { credits, openAuthModal, showToast } = useApp();
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState<ModelId>(DEFAULT_MODEL);
@@ -70,9 +78,22 @@ export function Composer({ ref, inFlight, blocked, onGenerate }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useImperativeHandle(ref, () => ({
-    setPrompt: (next) => {
+    setPrompt: (untrimmed, select) => {
+      const next = untrimmed.slice(0, MAX_PROMPT_LENGTH);
       setPrompt(next);
-      textareaRef.current?.focus();
+      // After React commits the new value; preventScroll so callers own any scrolling.
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.focus({ preventScroll: true });
+        const [start, end] = select ?? [next.length, next.length];
+        el.setSelectionRange(start, end);
+      });
+    },
+    setSettings: (settings) => {
+      if (settings.model) setModel(settings.model);
+      if (settings.aspect) setAspect(settings.aspect);
+      if (settings.batch) setBatch(settings.batch);
     },
   }));
 
@@ -107,7 +128,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate }: Props) {
         e.preventDefault();
         submit();
       }}
-      className={`relative grid gap-3 rounded-2xl border bg-bg-2 p-3 shadow-float sm:grid-cols-[1fr_auto] sm:gap-4 sm:p-5 ${
+      className={`relative grid gap-3 rounded-2xl border bg-bg-2 p-3 sm:grid-cols-[1fr_auto] ${docked ? "shadow-dock" : "shadow-float"} sm:gap-4 sm:p-5 ${
         inFlight ? "border-accent/30 motion-safe:animate-pulse-border" : "border-border-2"
       }`}
     >
@@ -136,14 +157,37 @@ export function Composer({ ref, inFlight, blocked, onGenerate }: Props) {
                 submit();
               }
             }}
+            onPaste={(e) => {
+              const el = e.currentTarget;
+              const replaced = el.selectionEnd - el.selectionStart;
+              const after = el.value.length - replaced + e.clipboardData.getData("text").length;
+              // maxLength cuts the paste silently; say so, or the missing tail looks like a bug.
+              if (after > MAX_PROMPT_LENGTH) {
+                showToast({
+                  tone: "neutral",
+                  text: `Prompt trimmed to ${MAX_PROMPT_LENGTH.toLocaleString("en-US")} characters.`,
+                });
+              }
+            }}
             rows={1}
-            maxLength={2000}
+            maxLength={MAX_PROMPT_LENGTH}
+            aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
             placeholder="Describe the scene you imagine"
             className="field-sizing-content max-h-27.5 min-h-8 flex-1 resize-none bg-transparent py-1.25 text-[15px] leading-5.5 text-text-1 outline-none placeholder:text-text-placeholder"
           />
+          {prompt.length >= COUNTER_FROM && (
+            <span
+              id="prompt-count"
+              className={`shrink-0 self-end pb-1.5 text-xs font-medium tabular-nums ${
+                prompt.length >= MAX_PROMPT_LENGTH ? "text-danger" : "text-text-3"
+              }`}
+            >
+              {prompt.length}/{MAX_PROMPT_LENGTH}
+            </span>
+          )}
         </div>
 
-        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:px-0">
           <ChipMenu
             label="Model"
             icon={<SparkleIcon gradient />}

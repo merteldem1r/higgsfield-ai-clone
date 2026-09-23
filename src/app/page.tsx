@@ -1,53 +1,88 @@
-const swatches = [
-  { name: "bg-0", className: "bg-bg-0" },
-  { name: "bg-1", className: "bg-bg-1" },
-  { name: "bg-2", className: "bg-bg-2" },
-  { name: "bg-4", className: "bg-bg-4" },
-  { name: "sky", className: "bg-brand-sky" },
-  { name: "violet", className: "bg-brand-violet" },
-  { name: "pink", className: "bg-brand-pink" },
-  { name: "peach", className: "bg-brand-peach" },
-  { name: "danger", className: "bg-danger" },
-];
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { HeroComposer, HomeComposerProvider } from "./_home/home-composer";
+import { ModelChips } from "./_home/model-chips";
+import { PresetRow } from "./_home/preset-row";
+import { PromoCarousel } from "./_home/promo-carousel";
+import { ShowcaseGrid } from "./_home/showcase-grid";
+import { SiteFooter } from "./_home/site-footer";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-360 flex-1 flex-col items-center justify-center gap-8 px-4 py-16 text-center sm:px-6">
-      <span className="rounded-full border border-border-3 bg-bg-3 px-3 py-1 text-xs font-medium text-text-2">
-        Step 0 · scaffold
-      </span>
+    <>
+      <main className="mx-auto w-full max-w-360 flex-1 px-4 pt-4 sm:px-6">
+        <HomeComposerProvider>
+          <PromoCarousel />
 
-      <h1 className="font-display text-display-sm uppercase sm:text-display">
-        Type a prompt.
-        <br />
-        <span className="text-brand-gradient">Get a real image.</span>
-      </h1>
+          <section aria-labelledby="hero-title" className="flex flex-col items-center gap-8 pt-16 pb-4 sm:pt-20">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <h1 id="hero-title" className="font-display text-display-sm uppercase sm:text-display">
+                Type a scene.
+                <br />
+                <span className="text-brand-gradient">Get a real image.</span>
+              </h1>
+              <p className="text-base text-text-2">Flux runs right here. Six free credits, no signup.</p>
+            </div>
+            <HeroComposer />
+            <ModelChips />
+          </section>
 
-      <p className="max-w-md text-base text-text-2">
-        Placeholder page. If the headline above is narrow and heavy, Barlow
-        Condensed loaded. If it looks wide, it fell back to Arial.
-      </p>
+          <Section
+            id="showcase"
+            title="Made with Flux"
+            subtitle="Every image here came out of this site's composer, prompt and all."
+            action={
+              <Link
+                href="/image"
+                className="flex h-9 shrink-0 items-center rounded-md bg-bg-3 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-5"
+              >
+                Open Image
+              </Link>
+            }
+          >
+            <ShowcaseGrid />
+          </Section>
 
-      <p className="flex gap-4 text-sm text-text-1">
-        <span className="font-normal">Inter 400</span>
-        <span className="font-medium">Inter 500</span>
-        <span className="font-semibold">Inter 600</span>
-        <span className="font-semibold tabular-nums text-accent-text">0123456789</span>
-      </p>
+          <Section
+            id="presets"
+            title="Start from a style"
+            subtitle="Pick a look, then type your own subject over the highlighted words."
+          >
+            <PresetRow />
+          </Section>
+        </HomeComposerProvider>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
 
-      <ul className="flex flex-wrap justify-center gap-2" aria-label="Color tokens">
-        {swatches.map((s) => (
-          <li key={s.name} className="flex flex-col items-center gap-1">
-            <span className={`size-10 rounded-md border border-border-3 ${s.className}`} />
-            <span className="text-xs text-text-3">{s.name}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="rounded-xl bg-brand-gradient px-6 py-3 text-base font-semibold text-accent-ink inset-shadow-lip">
-        Generate <span className="opacity-50 line-through">3</span>{" "}
-        <span className="font-bold">2</span>
+function Section({
+  id,
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  id: string;
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="mt-20">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <h2 id={`${id}-title`} className="font-display text-h2 uppercase">
+            {title}
+          </h2>
+          <p className="mt-1.5 text-sm text-text-2">{subtitle}</p>
+        </div>
+        {action}
       </div>
-    </main>
+      {children}
+    </section>
   );
 }

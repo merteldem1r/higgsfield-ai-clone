@@ -68,7 +68,8 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 │   ├── DESIGN.md         # tokens, type, components, states, motion
 │   └── recon/            # notes.md + screenshots/ of the original
 ├── public/
-│   └── showcase/         # our own Flux Dev generations for empty states + showcase
+│   ├── showcase/         # our own Flux Dev generations: hero stack, carousel posters, home grid
+│   └── presets/          # one image per home preset, generated from that preset's own prompt
 ├── scripts/
 │   └── test-credits.mts  # npm run test:credits; credit/abuse checks against next dev
 ├── supabase/
@@ -76,12 +77,14 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 ├── src/
 │   ├── app/
 │   │   ├── api/generate/route.ts  # POST: auth → start_generation → fal → Storage → complete
-│   │   ├── image/        # /image: studio, composer, chip menus, results grid, notice bar
+│   │   ├── _home/        # / sections: carousel, hero composer, showcase grid, presets, footer
+│   │   ├── image/        # /image: studio, results grid, notice bar, lightbox
 │   │   ├── globals.css   # Tailwind import + @theme design tokens
 │   │   ├── layout.tsx    # next/font, AppProvider, header, auth modal
-│   │   ├── page.tsx      # placeholder home
+│   │   ├── page.tsx      # Explore home
 │   │   └── favicon.ico
 │   ├── components/       # cross-route: header/nav, credits pill, toast, auth modal, fanned stack, icons
+│   │   └── composer/     # the composer (used by / and /image) + the / → /image sessionStorage handoff
 │   └── lib/
 │       ├── credits.ts    # model costs, shared by UI and API
 │       ├── fal.ts        # server-only; every fal call lives here

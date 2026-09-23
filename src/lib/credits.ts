@@ -7,6 +7,8 @@ export const MODELS = {
   "flux-schnell": {
     label: "Flux Schnell",
     description: "Fast drafts, about 2 seconds",
+    // Typical wall time per request incl. the Storage copy; drives the pending tile's estimate only.
+    estSeconds: 3,
     credits: 2,
     listCredits: 3,
     // fal bills $0.003/MP, rounded up per image. 1024x1024 is just over 1MP, so budget for 2.
@@ -15,6 +17,7 @@ export const MODELS = {
   "flux-dev": {
     label: "Flux Dev",
     description: "Richer detail and lighting",
+    estSeconds: 9,
     credits: 6,
     listCredits: 8,
     // $0.025/MP, rounded up per image; same 2MP worst case as above (square_hd).
@@ -36,7 +39,11 @@ export const ASPECTS = {
 
 export type AspectId = keyof typeof ASPECTS;
 
-export const DEFAULT_ASPECT: AspectId = "1:1";
+// 16:9, not 1:1: square_hd is just over 1MP, which fal bills as 2MP (double) on both models.
+export const DEFAULT_ASPECT: AspectId = "16:9";
+
+// Enforced by the composer and /api/generate alike. The generations.prompt check allows 2000 as a backstop.
+export const MAX_PROMPT_LENGTH = 500;
 
 export const BATCH_MIN = 1;
 export const BATCH_MAX = 4;

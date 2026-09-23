@@ -12,7 +12,7 @@ export type Toast = {
   text: string;
   action?: { label: string; onClick: () => void };
 };
-export type AuthModalVariant = "signup" | "out-of-credits";
+export type AuthModalVariant = "login" | "signup" | "out-of-credits";
 
 type AppState = {
   /** null while the first balance read is in flight. */

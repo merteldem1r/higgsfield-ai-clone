@@ -48,6 +48,15 @@
   /* status: kept apart from brand pink so errors never read as on-brand */
   --color-danger: #f5475f;
 
+  /* auth modal carousel track (#3d3b3b, sampled from the recon modal) */
+  --color-progress-track: #3d3b3b;
+
+  /* third-party marks: Google's own "G" colors, which its brand rules require unchanged */
+  --color-google-blue: #4285f4;
+  --color-google-green: #34a853;
+  --color-google-yellow: #fbbc05;
+  --color-google-red: #ea4335;
+
   /* badges */
   --color-blue: #2663eb;
   --color-blue-offer: #3352e9;
@@ -72,6 +81,8 @@
   --shadow-modal: 0 24px 80px rgb(0 0 0 / 0.6);
   --shadow-focus: 0 0 0 2px var(--color-bg-0), 0 0 0 4px var(--color-accent);
   --shadow-photo: 0 8px 24px rgb(0 0 0 / 0.5);
+  /* Docked composer over scrolling results: shadow on all sides so it reads as floating above them. */
+  --shadow-dock: 0 -12px 40px rgb(0 0 0 / 0.6), 0 16px 48px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.35);
   /* Glow under gradient buttons: soft at rest, stronger on hover. */
   --shadow-brand-glow-soft: 0 4px 18px color-mix(in srgb, var(--color-brand-violet) 28%, transparent);
   --shadow-brand-glow: 0 8px 28px color-mix(in srgb, var(--color-brand-violet) 50%, transparent),
@@ -83,7 +94,9 @@
   /* DESIGN.md §4. Transform animations are applied with motion-safe: at the call site. */
   --animate-fan-in: fan-in 500ms var(--ease-out) backwards;
   --animate-shimmer: shimmer 1.6s linear infinite;
-  --animate-reveal: reveal 400ms var(--ease-out);
+  --animate-reveal: reveal 700ms var(--ease-out);
+  --animate-aurora: aurora 7s linear infinite;
+  --animate-breathe: breathe 1.8s ease-in-out infinite;
   --animate-pulse-border: pulse-border 1.6s ease-in-out infinite;
   --animate-rise-in: rise-in 200ms ease-out;
   --animate-drop-in: drop-in 200ms ease-out;
@@ -91,6 +104,9 @@
   --animate-modal-in: modal-in 220ms var(--ease-out);
   --animate-fade-in: fade-in 150ms ease-out;
   --animate-danger-pulse: danger-pulse 400ms ease-in-out 2;
+  --animate-ken-burns: ken-burns 20s ease-in-out infinite alternate;
+  --animate-progress-fill: progress-fill 5s linear;
+  --animate-ken-burns-reverse: ken-burns-reverse 20s ease-in-out infinite alternate;
 
   @keyframes fan-in {
     from { rotate: 0deg; translate: 0 12px; opacity: 0; }
@@ -100,7 +116,14 @@
     to { background-position: -50% 0; }
   }
   @keyframes reveal {
-    from { opacity: 0; filter: blur(8px); scale: 1.02; }
+    from { opacity: 0; filter: blur(20px); scale: 1.04; }
+  }
+  @keyframes aurora {
+    to { rotate: 360deg; }
+  }
+  @keyframes breathe {
+    0%, 100% { scale: 0.88; opacity: 0.75; }
+    50% { scale: 1.08; opacity: 1; }
   }
   @keyframes pulse-border {
     0%, 100% { border-color: color-mix(in srgb, var(--color-accent) 30%, transparent); }
@@ -120,6 +143,18 @@
   }
   @keyframes fade-in {
     from { opacity: 0; }
+  }
+  @keyframes progress-fill {
+    from { scale: 0 1; }
+    to { scale: 1 1; }
+  }
+  @keyframes ken-burns {
+    from { scale: 1; translate: 0 0; }
+    to { scale: 1.08; translate: -2% -1.5%; }
+  }
+  @keyframes ken-burns-reverse {
+    from { scale: 1.08; translate: 2% 1.5%; }
+    to { scale: 1; translate: 0 0; }
   }
   @keyframes danger-pulse {
     50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 45%, transparent); }
@@ -150,6 +185,13 @@
 @layer base {
   html {
     color-scheme: dark;
+  }
+
+  /* showModal() makes the page inert but still scrollable. Lock it while any dialog is open;
+     the stable gutter keeps the layout from jumping where scrollbars take up space. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -201,6 +243,18 @@
   );
 }
 
+/* The logo colors swept around a circle; blurred and rotated, it's the "generating" glow. */
+@utility bg-brand-conic {
+  background-image: conic-gradient(
+    from 0deg,
+    var(--color-brand-sky),
+    var(--color-brand-violet),
+    var(--color-brand-pink),
+    var(--color-brand-peach),
+    var(--color-brand-sky)
+  );
+}
+
 @utility text-brand-gradient {
   background-image: linear-gradient(
     100deg,
@@ -222,4 +276,27 @@
 /* Set before paint by the inline script in layout.tsx, so a dismissed banner never flashes. */
 html[data-banner="dismissed"] [data-promo-banner] {
   display: none;
+}
+
+/* Scroll reveals (home). The Reveal component sets data-reveal on a container and data-revealed once it
+   enters the viewport; --reveal-i (set per child in JS) gives the 60ms stagger. Reduced motion keeps the fade only. */
+[data-reveal] > * {
+  transition:
+    opacity 400ms var(--ease-out),
+    translate 400ms var(--ease-out);
+  transition-delay: calc(var(--reveal-i, 0) * 60ms);
+}
+
+[data-reveal]:not([data-revealed]) > * {
+  opacity: 0;
+  translate: 0 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] > * {
+    transition: opacity 150ms ease-out;
+  }
+  [data-reveal]:not([data-revealed]) > * {
+    translate: none;
+  }
 }
