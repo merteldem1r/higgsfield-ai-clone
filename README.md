@@ -1,14 +1,8 @@
 # Higgsfield AI Clone
 
-<p>
-  <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,supabase,postgres,vercel" alt="Next.js, React, TypeScript, Tailwind CSS, Supabase, PostgreSQL, Vercel" />
-  </a>
-</p>
-
-A working clone of higgsfield.ai's image generation product, built as a 24-hour take-home.
+A working clone of higgsfield.ai's image generation product, built as a 10-12 hour take-home.
 Next.js 16 on Vercel, Supabase for auth, Postgres and Storage, fal.ai for the models.
-Structure and dark UI follow the original; the palette, logo and every image are our own.
+Structure and dark UI follow the original; the palette, logo and every image are my own.
 
 **Live:** [Higgsfield AI Clone by Mert Eldemir](https://hf-studio-8x.vercel.app/)
 
@@ -66,7 +60,7 @@ Structure and dark UI follow the original; the palette, logo and every image are
 | Email sign-up | **Real** | In-place upgrade of the guest user; one-time 20-credit bonus; login and logout |
 | Prompt improver | **Real** | Llama 3.1 8B via fal; free, capped at 20 per IP per day |
 | i18n | **Real** | English, Turkish, Russian; cookie-selected dictionaries, no i18n library |
-| Video | UI-only | A nav entry for fidelity; there is no video page and no video spend |
+| Video | UI-only | Shown as a non-clickable "Soon" entry in the nav, the home model chips and the Assets sidebar. There is no `/video` route and no video spend |
 | Social sign-in | UI-only | Google is shown disabled; Apple and Microsoft are left out on purpose |
 | Pricing | UI-only | Plan cards and FAQ; CTAs say there are no payments in the demo |
 
@@ -227,7 +221,7 @@ src/
 supabase/migrations/             schema, RLS, credit functions; applied in order
 scripts/test-credits.mts         the 46-check credit and abuse suite
 docs/                            PLAN.md (scope, credit rules), DESIGN.md (tokens, motion), recon/
-public/showcase, public/presets  our own Flux generations used for the landing and empty states
+public/showcase, public/presets  my own Flux generations used for the landing and empty states
 ```
 
 The rule behind the split: `credits.ts` is imported by both the Generate button and the route, so the price the user sees and the price the server charges cannot disagree.
@@ -315,4 +309,4 @@ The judging criteria are speed, product judgement and UX/UI. The plan was to mak
 
 ---
 
-The palette and logo are deliberately our own, sampled from our logo rather than Higgsfield's lime, and every image in the app comes from our own generations. This is an independent clone built as a take-home exercise. It is not affiliated with or endorsed by Higgsfield.
+The palette and logo are deliberately my own: the accent colours are sampled from my logo, not Higgsfield's lime, and every image in the app comes from my own generations. This is an independent clone built as a take-home exercise. It is not affiliated with or endorsed by Higgsfield.
