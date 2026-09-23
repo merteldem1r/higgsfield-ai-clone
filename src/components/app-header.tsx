@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { AuthButtons } from "./auth-buttons";
 import { CreditsPill } from "./credits-pill";
-import { DiamondIcon, LogoMark } from "./icons";
+import { DiamondIcon, GlobeIcon, LogoMark, SparkleOutlineIcon } from "./icons";
 import { NavLinks } from "./nav-links";
 import { PromoBanner } from "./promo-banner";
 import { ToastViewport } from "./toast-viewport";
@@ -17,7 +17,7 @@ export function AppHeader() {
         </Link>
         <NavLinks />
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link
             href="/pricing"
             className="relative flex h-8 items-center gap-1.5 rounded-md bg-bg-3 px-3 text-sm font-medium transition-colors duration-150 hover:bg-bg-5 max-sm:hidden"
@@ -28,6 +28,22 @@ export function AppHeader() {
               30% OFF
             </span>
           </Link>
+          {/* Display-only for now: both lead to Explore until there's a page behind them. */}
+          <Link
+            href="/"
+            className="flex h-8 items-center gap-1.5 rounded-md bg-bg-3 px-3 text-sm font-medium transition-colors duration-150 hover:bg-bg-5 max-xl:hidden"
+          >
+            <SparkleOutlineIcon className="size-3.5" />
+            Enterprise
+          </Link>
+          <Link
+            href="/"
+            aria-label="Language"
+            className="flex size-8 items-center justify-center rounded-md bg-bg-3 text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 max-lg:hidden"
+          >
+            <GlobeIcon className="size-4" />
+          </Link>
+          <span aria-hidden className="mx-1 h-4 w-px bg-border-3 max-sm:hidden" />
           <CreditsPill />
           <AuthButtons />
         </div>

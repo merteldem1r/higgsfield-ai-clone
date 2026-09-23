@@ -62,7 +62,7 @@ const ASPECT_OPTIONS: ChipOption<AspectId>[] = (Object.keys(ASPECTS) as AspectId
 type Props = {
   ref: Ref<ComposerHandle>;
   inFlight: boolean;
-  /** A notice bar is up (budget, IP limit, paused): generating is blocked until it's dismissed. */
+  /** A blocking rejection (budget, IP limit, paused) happened; the thread explains it and Generate stays off. */
   blocked: boolean;
   onGenerate: (request: GenerateRequest) => Promise<boolean>;
   /** Fixed over scrolling results (/image): a heavier shadow so content reads as passing underneath. */

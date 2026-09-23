@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { AlertIcon, DownloadIcon, ReuseIcon, SparkleIcon, SpinnerIcon } from "@/components/icons";
+import { AlertIcon, DownloadIcon, SparkleIcon } from "@/components/icons";
 import { MODELS, type AspectId } from "@/lib/credits";
 
-import { Lightbox } from "./lightbox";
 import type { Run, RunImage } from "./types";
-
-export type LightboxItem = { image: RunImage; prompt: string };
 
 // Each run's row shares one height, so a batch reads as a set. Kept modest on purpose: the lightbox is the big view.
 // Tiles carry the aspect; the row carries --ratio/--n/--row-h so its max width keeps that height.
@@ -37,114 +34,47 @@ const ROW = "grid w-full gap-2 max-w-[calc(var(--row-h)*var(--ratio)*var(--n)_+_
 // Staggers the glow's rotation so a batch doesn't swirl in lockstep.
 const GLOW_PHASE = ["", "[animation-delay:-1.75s]", "[animation-delay:-3.5s]", "[animation-delay:-5.25s]"];
 
-const TIME = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-
-type Props = {
-  runs: Run[];
-  onRetry: (run: Run) => void;
+export function RunMedia({
+  run,
+  onOpen,
+  onRetry,
+  retryDisabled,
+}: {
+  run: Run;
+  onOpen: (image: RunImage) => void;
+  onRetry: () => void;
   retryDisabled: boolean;
-  onReuse: (run: Run) => void;
-};
-
-export function RunFeed({ runs, onRetry, retryDisabled, onReuse }: Props) {
-  const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
-
-  return (
-    <>
-      {/* Chat order: oldest first, newest right above the composer. mt-auto pins a short feed to the bottom. */}
-      <ol aria-label="Your generations" className="mt-auto flex flex-col divide-y divide-border-1">
-        {runs.toReversed().map((run) => {
-          const { prompt, aspect, batch, model } = run.request;
-          const count = run.status === "done" ? run.images.length : run.status === "failed" ? 1 : batch;
-          const tile = `${TILE_ASPECT[aspect]} w-full`;
-
-          return (
-            <li key={run.id} className="py-8 first:pt-2 motion-safe:animate-rise-in">
-              <RunHeader run={run} onReuse={() => onReuse(run)} />
-              <div className={`${ROW} ${ROW_RATIO[aspect]} ${ROW_COUNT[count] ?? ROW_COUNT[4]}`}>
-                {run.status === "pending" &&
-                  Array.from({ length: batch }, (_, i) => (
-                    <GeneratingTile
-                      key={i}
-                      className={tile}
-                      startedAt={run.startedAt}
-                      estSeconds={MODELS[model].estSeconds * (1 + 0.25 * (batch - 1))}
-                      phase={GLOW_PHASE[i]}
-                    />
-                  ))}
-                {run.status === "failed" && (
-                  <FailedTile className={tile} onRetry={() => onRetry(run)} disabled={retryDisabled} />
-                )}
-                {run.status === "done" &&
-                  run.images.map((image, i) => (
-                    <ImageTile
-                      key={image.url}
-                      className={tile}
-                      image={image}
-                      prompt={prompt}
-                      phase={GLOW_PHASE[i]}
-                      fileName={`image-${run.id.slice(0, 8)}-${i + 1}.jpg`}
-                      onOpen={() => setLightbox({ image, prompt })}
-                    />
-                  ))}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-      <Lightbox item={lightbox} onClose={() => setLightbox(null)} />
-    </>
-  );
-}
-
-function RunHeader({ run, onReuse }: { run: Run; onReuse: () => void }) {
-  const { prompt, model, aspect, batch } = run.request;
+}) {
+  const { prompt, aspect, batch, model } = run.request;
+  const count = run.status === "done" ? run.images.length : run.status === "failed" ? 1 : batch;
+  const tile = `${TILE_ASPECT[aspect]} w-full`;
 
   return (
-    <div className="mb-4 flex items-start justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[15px] leading-5.5 text-text-1">{prompt}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Tag>
-            <SparkleIcon gradient className="size-3" />
-            {MODELS[model].label}
-          </Tag>
-          <Tag>{aspect}</Tag>
-          {batch > 1 && <Tag>{batch} images</Tag>}
-          {run.status === "pending" && (
-            <span className="ml-1 flex items-center gap-1.5 text-xs font-medium text-accent-text">
-              <SpinnerIcon className="size-3 motion-safe:animate-spin" />
-              Generating
-            </span>
-          )}
-          {run.status === "failed" && (
-            <span className="ml-1 text-xs font-medium text-danger">Failed, credits refunded</span>
-          )}
-          {run.status === "done" && (
-            <time dateTime={new Date(run.startedAt).toISOString()} className="ml-1 text-xs text-text-3">
-              {TIME.format(run.startedAt)}
-            </time>
-          )}
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onReuse}
-        title="Load this prompt and its settings into the composer"
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border-3 bg-bg-1 px-2.5 text-xs font-medium text-text-2 transition-colors duration-150 hover:bg-bg-3 hover:text-text-1"
-      >
-        <ReuseIcon className="size-3.5" />
-        Reuse
-      </button>
+    <div className={`${ROW} ${ROW_RATIO[aspect]} ${ROW_COUNT[count] ?? ROW_COUNT[4]}`}>
+      {run.status === "pending" &&
+        Array.from({ length: batch }, (_, i) => (
+          <GeneratingTile
+            key={i}
+            className={tile}
+            startedAt={run.startedAt}
+            estSeconds={MODELS[model].estSeconds * (1 + 0.25 * (batch - 1))}
+            phase={GLOW_PHASE[i]}
+          />
+        ))}
+      {run.status === "failed" && <FailedTile className={tile} onRetry={onRetry} disabled={retryDisabled} />}
+      {run.status === "done" &&
+        run.images.map((image, i) => (
+          <ImageTile
+            key={image.url}
+            className={tile}
+            image={image}
+            prompt={prompt}
+            phase={GLOW_PHASE[i]}
+            fileName={`image-${run.id.slice(0, 8)}-${i + 1}.jpg`}
+            onOpen={() => onOpen(image)}
+          />
+        ))}
     </div>
-  );
-}
-
-function Tag({ children }: { children: ReactNode }) {
-  return (
-    <span className="flex h-6 items-center gap-1 rounded-md bg-bg-3 px-2 text-xs font-medium text-text-2">
-      {children}
-    </span>
   );
 }
 
@@ -189,7 +119,7 @@ function GeneratingTile({
     <div
       role="status"
       aria-label="Generating image"
-      className={`relative isolate overflow-hidden rounded-xl bg-bg-2 ring-1 ring-white/6 ring-inset ${className}`}
+      className={`relative isolate overflow-hidden rounded-xl bg-bg-2 ring-1 ring-white/6 ring-inset motion-safe:animate-rise-in ${className}`}
     >
       <Glow phase={phase} />
       <div className="flex size-full flex-col items-center justify-center gap-1.5 px-3 text-center">

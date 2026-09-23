@@ -133,61 +133,60 @@ Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`
   - Model rows show a name (14/500), a 12px description in `--text-2`, and the credit cost aligned right.
   - The selected row gets an `--accent-text` check. Locked rows are 50% opacity with a lock icon.
 
-**Run feed (Image) *(ours)*:** results are grouped by Generate click ("run") in chat order: oldest at the top, newest right above the composer. This replaces a flat tile grid, where one result looked like a lost thumbnail.
-- **Column:** the feed shares the composer's column exactly (1120px max, 16px gutters), so the image, its prompt and the composer all line up. Runs are separated by a 1px `--border-1` divider with 32px vertical padding. A feed shorter than the viewport sits at the bottom, just above the composer. New runs enter with rise-in, and starting one scrolls smoothly to the bottom. Loading history jumps straight to the newest.
-- **Run header:**
-  - The prompt at 15/22 `--text-1`, clamped to 2 lines.
-  - Then tags: 24px, `--bg-3`, `--r-md`, 12/500 `--text-2`, for the model (gradient sparkle), the aspect, and "N images" when N > 1.
-  - Then the status: a spinner + "Generating" in `--accent-text`, "Failed, credits refunded" in `--danger`, or the time in `--text-3`.
-  - On the right, a "Reuse" button (32px, `--bg-1`, 1px `--border-3`) loads the prompt and all its settings into the composer.
-- **Row sizing:**
+**Chat thread (Image) *(ours)*:** every Generate click is one chat turn: the visitor's message, then the assistant's reply. It reads oldest first, with the newest turn right above the composer. This replaces the flat tile grid, where one result looked like a lost thumbnail.
+- **Column:** the thread shares the composer's column exactly (1120px max, 16px gutters). Turns are 40px apart. A thread shorter than the viewport sits at the bottom, just above the composer.
+- **Scrolling:** starting a turn scrolls smoothly to the bottom, and loading history jumps straight to the newest. While a reply types, the thread sticks to the bottom only if the visitor is already within 160px of it.
+- **User bubble:**
+  - Right-aligned, max 88% (576px on desktop), `--bg-4` with a 1px white 5% ring, 16px radius with a 6px bottom-right corner, `12px 16px` padding.
+  - The prompt at 15/24. Under it, right-aligned tags (24px, black 25% fill, 12/500 `--text-2`): model (gradient sparkle), aspect, and "N images" when N > 1.
+  - Under the bubble: the time and a "Reuse" link (12px, `--text-3` / `--text-2`), shown on hover or focus and always on touch. Reuse loads the prompt and all its settings into the composer.
+- **Assistant reply:**
+  - A 32px `--bg-2` avatar with the logo mark. Its ring is `--accent` 60% while generating, `--border-2` otherwise.
+  - Then, one after another: the intro line → the media row → the closing line → the actions.
+  - Text is 15/24 at 90% white, max 672px.
+- **Voice:** templates filled with real facts only: model, aspect, take count, time taken, credits used and left, and error codes (`assistant-lines.ts`).
+  - About 8 intro phrasings, 5 "done" openers, 6 nudges, 4 failure lines, and one line per rejection code.
+  - It never describes image content, because nothing looked at the image.
+  - Wording is picked by hashing the run id, so a reload shows the same words.
+  - History turns omit "credits left", since only today's balance is known.
+- **Streaming (live turns only):** a 450ms beat with just the caret, then word by word at 30–60ms, with +110ms after `,` and `;` and +220ms after `.`, `!`, `?` and `:`. The caret is 3px wide, 1em tall, `--brand-gradient`, pulsing. The line is `aria-busy` while typing, and the list is `role="log"`. History and reduced motion render text whole.
+- **Actions (latest turn only):** 36px pill chips (`--bg-1`, 1px `--border-3`, hover border `--accent` 50%).
+  - After a result: three one-step variations, each showing its credit cost: the other model, 4 takes / one take, and vertical / wide. A chip only loads the composer; it never generates.
+  - After a rejection: "Sign up for 50 credits" (INSUFFICIENT_CREDITS) or "Try again" (FAL_DISABLED, network, unknown). A retry adds a new turn; the old one stays as a record.
+- **Media row sizing:**
   - A run's images share one height, so a batch reads as a set. It's kept modest on purpose: clicking opens the full-size lightbox.
   - The row is a CSS grid whose max width is `row-h × ratio × n + gaps`. Row height is `min(38vh, 360px)` for one image, then `min(32vh, 300px)` / `min(28vh, 260px)` / `min(26vh, 240px)` for 2 / 3 / 4.
   - A batch of 4 is 2×2 below 640px.
-  - Tiles use `--r-xl`, keep their true aspect ratio, and are left-aligned under the header.
+  - Tiles use `--r-xl`, keep their true aspect ratio, and are left-aligned under the assistant's text.
 - **Generating tile:**
   - Behind: the logo colors as a conic gradient, blurred 64px at 30% and rotating over 7s, with each batch tile phase-shifted. The pending shimmer sweeps on top.
   - Centered: a 24px gradient sparkle that breathes (scale .88↔1.08), "Generating" (14/500), and an elapsed "3.2s" counter (12px tabular).
   - Bottom: a 2px gradient progress line. It's an estimate from the model's typical time (`estSeconds`), easing toward 95%, so it never claims done early.
-  - It renders the moment Generate is clicked, before auth or the API.
 - **Finished tile:**
   - The glow stays under the image until its bytes load, then the image resolves with the reveal.
   - Hover: the image scales 1.015, and a 32px download button appears top-right (`rgb(0 0 0 / .5)` + blur). It's always visible on touch.
   - Click opens the lightbox on `--overlay`.
 - **Failed tile:** same size as the image would be. `--bg-2` with a 1px `--danger` 25% inner ring, a 20px `--danger` icon, "Generation failed", "Your credits were refunded.", and a bordered "Try again" button.
-- **Under reduced motion:** no glow rotation, breathing, shimmer or reveal blur. Fades only.
+- **Empty state:** the hero (fanned stack + headline), then 3 starter chips that fill the composer: "Lighthouse under the Milky Way", "Rainy neon alley", "Glass house in the snow".
+- **Under reduced motion:** no streaming, glow rotation, breathing, shimmer or reveal blur. Fades only.
 
-**Error surfaces *(ours)*:** every server error code maps to exactly one surface.
+**Error surfaces *(ours)*:** every server error code maps to exactly one surface. On Image that surface is the thread itself.
 
-| Code | Surface | Tile | Credits |
+| Code | Surface | Composer | Credits |
 |---|---|---|---|
-| `INSUFFICIENT_CREDITS` | Auth modal, out-of-credits variant (Pricing if signed in). No toast | Pending tile removed | Not charged |
-| `GLOBAL_CAP` | **Notice bar** in the `danger` tone, sticky until dismissed or reload | Pending tile removed | Not charged |
-| `FAL_DISABLED` (503) | **Notice bar** in the `neutral` tone, sticky | Pending tile removed | Not charged |
-| `IP_LIMIT` (429) | **Notice bar** in the `neutral` tone, sticky | Pending tile removed | Not charged |
-| Provider failure / timeout | **Failed tile** + toast in the `danger` tone, 5s | Failed tile | Refunded |
-| Network / unknown | Toast in the `danger` tone, 6s, with a Retry action | Pending tile removed | — |
+| `INSUFFICIENT_CREDITS` | Assistant turn + the auth modal (out-of-credits variant) opens; a "Sign up for 50 credits" chip | Stays usable (a cheaper setting may fit) | Not charged |
+| `GLOBAL_CAP` | Assistant turn ("Today's demo budget is used up…") | Locked until reload | Not charged |
+| `IP_LIMIT` (429) | Assistant turn ("Your network has hit today's image limit…") | Locked until reload | Not charged |
+| `FAL_DISABLED` (503) | Assistant turn + "Try again" chip | Locked; "Try again" unlocks and retries | Not charged |
+| Provider failure / timeout | Failed tile + assistant line naming the refund | Usable | Refunded |
+| Network / unknown | Assistant turn + "Try again" chip | Usable | — |
 
-- **Notice bar:** for states that block generating.
-  - Placement: it docks **directly above the composer**, same width (max 1120px), with an 8px gap. On mobile it sits above the full-width Generate area.
-  - Size and shape: 48px tall, 16px horizontal padding, `--r-lg`, `--shadow-float`.
-  - Content: 16px icon, 14/500 text, an optional right-aligned text link (13/600), and a 16px X.
-  - Tones:
-    - `danger`: `--danger` at 12% fill + 1px `--danger` at 40% border + `--text-1` text, `--danger` icon.
-    - `neutral`: `--bg-1` fill + 1px `--border-3` border.
-  - Copy:
-    - GLOBAL_CAP: "Demo budget reached for today — generation resumes tomorrow. Your gallery is still here." Link: "View assets".
-    - FAL_DISABLED: "Generation is paused right now. Try again in a few minutes."
-    - IP_LIMIT: "Daily limit reached on this network. Come back tomorrow."
-  - While a notice bar is shown, Generate stays disabled.
-  - Enter animation: `translateY(8px)→0` + fade, 200ms.
-- **Toast:** for one-off failures that don't block the next attempt.
+- **Toast:** for one-off notices outside the thread (e.g. "Prompt trimmed to 500 characters.", "Reference images are coming soon.").
   - Placement: **top-center, 12px below the nav** (mobile: 12px below the top safe area). One at a time; a new toast replaces the old one.
   - Size and shape: `max-width: 420px`, at least 44px tall, `12px 14px` padding, `--bg-1` fill, 1px `--border-3`, `--r-lg`, `--shadow-float`.
   - Content: a 3px left accent bar in the tone color, a 16px icon, 14/500 text, an optional `--accent-text` text action.
   - Dismissal: auto-dismisses after 5s (6s when it has an action). Hovering pauses the timer, and swiping up or clicking the X dismisses it.
-  - Copy for a provider failure: "Generation failed — 2 credits refunded."
-- **Accessibility:** notice bars are `role="status"`. Toasts are in an `aria-live="polite"` region. Neither ever steals focus. Only the modal traps focus.
+- **Accessibility:** the thread is `role="log"`, and typing lines are `aria-busy`. Toasts are in an `aria-live="polite"` region. Neither ever steals focus. Only the modal traps focus.
 
 **Fanned photo stack (empty states):**
 - **Arrangement:** four photos overlapping about 25%. Rotations are −8°, −3°, 0°, +6°, each lifted −4px. **The third photo is a circle**; the others are rounded squares with `--r-lg`.
@@ -250,7 +249,7 @@ Easing: `--ease-out: cubic-bezier(.2,.8,.2,1)`.
 | Create hub (mobile) | `translateY(100%)→0` | 300ms `--ease-out` |
 | Banner dismiss | height 44→0 + fade | 200ms |
 | Composer in-flight border | accent border opacity 30% ↔ 60% | 1.6s loop |
-| Notice bar in / out | `translateY(8px)→0` + fade / fade | 200ms / 150ms |
+| Assistant text | word-by-word stream after a 450ms beat; gradient caret pulses | 30–60ms/word, +110/+220ms at punctuation |
 | Toast in / out | `translateY(-8px)→0` + fade / fade + `translateY(-4px)` | 200ms / 150ms |
 
 With `prefers-reduced-motion: reduce`, keep only the opacity fades (≤150ms). No transforms, no shimmer (use a static `--bg-2`), no carousel auto-advance.

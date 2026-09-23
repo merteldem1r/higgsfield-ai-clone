@@ -5,27 +5,26 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/components/app-provider";
 import { Composer, type ComposerHandle } from "@/components/composer/composer";
 import { takeStashedGeneration } from "@/components/composer/handoff";
-import { batchCost, DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
+import { SparkleIcon } from "@/components/icons";
+import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
 import { createClient } from "@/lib/supabase/client";
 
-import { NoticeBar } from "./notice-bar";
+import { ChatThread } from "./chat-thread";
 import { requestGeneration } from "./request-generation";
-import { RunFeed } from "./run-feed";
-import type { GenerateRequest, Notice, Run } from "./types";
+import type { GenerateRequest, Run } from "./types";
 
 const BUCKET = "generations";
 const HISTORY_LIMIT = 40;
 
-// DESIGN.md → Error surfaces. Codes not listed here fall through to the generic toast.
-const NOTICES: Record<string, Notice> = {
-  GLOBAL_CAP: {
-    tone: "danger",
-    text: "Demo budget reached for today — generation resumes tomorrow. Your gallery is still here.",
-    link: { href: "/assets", label: "View assets" },
-  },
-  FAL_DISABLED: { tone: "neutral", text: "Generation is paused right now. Try again in a few minutes." },
-  IP_LIMIT: { tone: "neutral", text: "Daily limit reached on this network. Come back tomorrow." },
-};
+// Rejections that will fail again for everyone on this network/deployment until something changes, so the
+// composer locks after one. The assistant explains why in the thread (assistant-lines.ts).
+const BLOCKING = new Set(["GLOBAL_CAP", "IP_LIMIT", "FAL_DISABLED"]);
+
+const STARTERS = [
+  { label: "Lighthouse under the Milky Way", prompt: "a lone lighthouse on a sea cliff under a starry sky, milky way, long exposure" },
+  { label: "Rainy neon alley", prompt: "a neon-lit rainy alley in Tokyo at night, empty, reflections on wet pavement, cinematic wide shot" },
+  { label: "Glass house in the snow", prompt: "a modern glass house in a snowy pine forest at blue hour, warm interior lights glowing" },
+];
 
 type HistoryRow = {
   id: string;
@@ -34,6 +33,7 @@ type HistoryRow = {
   aspect: string;
   batch: number;
   created_at: string;
+  completed_at: string | null;
   assets: { storage_path: string; width: number | null; height: number | null }[];
 };
 
@@ -44,7 +44,7 @@ async function loadHistory(): Promise<Run[]> {
 
   const { data, error } = await supabase
     .from("generations")
-    .select("id, prompt, model, aspect, batch, created_at, assets(storage_path, width, height)")
+    .select("id, prompt, model, aspect, batch, created_at, completed_at, assets(storage_path, width, height)")
     .eq("status", "succeeded")
     .order("created_at", { ascending: false })
     .limit(HISTORY_LIMIT);
@@ -62,7 +62,9 @@ async function loadHistory(): Promise<Run[]> {
           batch: row.batch,
         },
         status: "done",
+        live: false,
         startedAt: Date.parse(row.created_at),
+        completedAt: row.completed_at ? Date.parse(row.completed_at) : undefined,
         images: row.assets
           .toSorted((a, b) => a.storage_path.localeCompare(b.storage_path))
           .map((asset) => ({
@@ -76,18 +78,18 @@ async function loadHistory(): Promise<Run[]> {
 }
 
 export function ImageStudio({ hero }: { hero: ReactNode }) {
-  const { refreshCredits, setCredits, showToast, openAuthModal } = useApp();
+  const { refreshCredits, setCredits, openAuthModal } = useApp();
   const [runs, setRuns] = useState<Run[]>([]);
   const [inFlight, setInFlight] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
-  // The ref is the real lock: state updates are async, so a double click could slip past `inFlight`.
+  const [blocked, setBlocked] = useState(false);
+  // The refs are the real locks: state updates are async, so a double click could slip past `inFlight`.
   const lock = useRef(false);
+  const blockedRef = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
   // Set before a runs update that should end with the page scrolled to the newest run (the bottom).
   const scrollToNewest = useRef<ScrollBehavior | null>(null);
-  // Toast actions outlive the render that created them, so they call the latest generate.
+  // The arrival effect below runs once, so it calls generate through this ref to get the current one.
   const latestGenerate = useRef<((request: GenerateRequest) => Promise<boolean>) | null>(null);
-  const retry = (request: GenerateRequest) => void latestGenerate.current?.(request);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,51 +114,56 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
 
   const updateRun = (id: string, patch: Partial<Run>) =>
     setRuns((current) => current.map((run) => (run.id === id ? { ...run, ...patch } : run)));
-  const removeRun = (id: string) => setRuns((current) => current.filter((run) => run.id !== id));
 
   async function generate(request: GenerateRequest): Promise<boolean> {
-    if (lock.current || notice) return false;
+    if (lock.current || blockedRef.current) return false;
     lock.current = true;
     setInFlight(true);
 
-    // The tile goes up before sign-in or the API: the first generation is the slowest path in the app.
+    // The turn goes up before sign-in or the API: the first generation is the slowest path in the app.
     const id = crypto.randomUUID();
     scrollToNewest.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    setRuns((current) => [{ id, request, status: "pending", startedAt: Date.now(), images: [] }, ...current]);
+    setRuns((current) => [
+      { id, request, status: "pending", live: true, startedAt: Date.now(), images: [] },
+      ...current,
+    ]);
 
     try {
       const outcome = await requestGeneration(request);
       if (outcome.ok) {
-        updateRun(id, { status: "done", images: outcome.images });
+        updateRun(id, {
+          status: "done",
+          images: outcome.images,
+          creditsLeft: outcome.credits,
+          completedAt: Date.now(),
+        });
         setCredits(outcome.credits);
         return true;
       }
 
       const { code, message } = outcome;
       if (code === "PROVIDER_ERROR") {
-        updateRun(id, { status: "failed" });
-        const { credits } = batchCost(request.model, request.batch);
-        showToast({ tone: "danger", text: `Generation failed — ${credits} credits refunded.` });
+        updateRun(id, { status: "failed", completedAt: Date.now() });
         return false;
       }
 
-      removeRun(id);
+      // Every other code was rejected before any spend; the assistant explains it in the thread.
+      updateRun(id, { status: "rejected", completedAt: Date.now(), rejection: { code, message } });
       if (code === "INSUFFICIENT_CREDITS") {
         openAuthModal("out-of-credits");
         void refreshCredits();
-      } else if (code in NOTICES) {
-        setNotice(NOTICES[code]);
-      } else {
-        showToast({ tone: "danger", text: message, action: { label: "Retry", onClick: () => retry(request) } });
+      }
+      if (BLOCKING.has(code)) {
+        blockedRef.current = true;
+        setBlocked(true);
       }
       return false;
     } catch (err) {
       console.error("Generation request failed", err);
-      removeRun(id);
-      showToast({
-        tone: "danger",
-        text: "Couldn't reach the server. Check your connection.",
-        action: { label: "Retry", onClick: () => retry(request) },
+      updateRun(id, {
+        status: "rejected",
+        completedAt: Date.now(),
+        rejection: { code: "NETWORK", message: err instanceof Error ? err.message : String(err) },
       });
       return false;
     } finally {
@@ -181,27 +188,50 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     void latestGenerate.current?.(stashed);
   }, []);
 
+  // The failed or rejected turn stays in the thread as a record; the retry is a new turn below it.
   function retryRun(run: Run) {
-    if (lock.current || notice) return;
-    removeRun(run.id);
+    // A pause is the one block a retry is meant to probe; the server says again if it's still on.
+    if (run.rejection?.code === "FAL_DISABLED") {
+      blockedRef.current = false;
+      setBlocked(false);
+    }
     void generate(run.request);
+  }
+
+  function loadIntoComposer({ prompt, ...settings }: GenerateRequest) {
+    composerRef.current?.setSettings(settings);
+    composerRef.current?.setPrompt(prompt);
   }
 
   return (
     <>
-      {/* max-w-288 minus px-4 is 1120px: the feed shares the composer's column exactly. */}
+      {/* max-w-288 minus px-4 is 1120px: the thread shares the composer's column exactly. */}
       <main className="mx-auto flex w-full max-w-288 flex-1 flex-col px-4 pt-6 pb-72 sm:pb-48">
         {runs.length === 0 ? (
-          hero
+          <div className="flex flex-1 flex-col items-center justify-center gap-8 py-10">
+            {hero}
+            <ul aria-label="Try one of these" className="flex flex-wrap justify-center gap-2">
+              {STARTERS.map((starter) => (
+                <li key={starter.label}>
+                  <button
+                    type="button"
+                    onClick={() => composerRef.current?.setPrompt(starter.prompt)}
+                    className="flex h-9 items-center gap-2 rounded-full border border-border-3 bg-bg-1 px-3.5 text-sm font-medium text-text-2 transition-colors duration-150 hover:border-accent/50 hover:bg-bg-3 hover:text-text-1"
+                  >
+                    <SparkleIcon gradient className="size-3.5" />
+                    {starter.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
-          <RunFeed
+          <ChatThread
             runs={runs}
+            onLoad={loadIntoComposer}
             onRetry={retryRun}
-            retryDisabled={inFlight || notice !== null}
-            onReuse={({ request: { prompt, ...settings } }) => {
-              composerRef.current?.setSettings(settings);
-              composerRef.current?.setPrompt(prompt);
-            }}
+            onSignUp={() => openAuthModal("signup")}
+            retryDisabled={inFlight || blocked}
           />
         )}
       </main>
@@ -211,9 +241,8 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
         aria-hidden
         className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-60 bg-linear-to-t from-bg-0 via-bg-0/85 to-transparent sm:h-44"
       />
-      <div className="fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-280 flex-col gap-2 sm:bottom-5">
-        {notice && <NoticeBar notice={notice} onDismiss={() => setNotice(null)} />}
-        <Composer ref={composerRef} inFlight={inFlight} blocked={notice !== null} onGenerate={generate} docked />
+      <div className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-280 sm:bottom-5">
+        <Composer ref={composerRef} inFlight={inFlight} blocked={blocked} onGenerate={generate} docked />
       </div>
     </>
   );

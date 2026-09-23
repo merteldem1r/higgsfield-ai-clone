@@ -6,7 +6,7 @@
 
 - **Surfaces:** Explore home (`/`) · Image tool (`/image`) · Video tool (`/video`, UI only) · Assets (`/assets`) · Auth modal · Pricing (`/pricing`) · mobile tab bar + Create hub.
 - **Core loop:** Explore → Image → prompt + model / aspect / batch → Generate (cost shown on the button) → results appear in place → saved to Assets. After about 3 free images the auth modal opens: "Sign up and get 50 credits". Reviewers are meant to reach that modal.
-- **Changes from the original:** guests can generate immediately. The nav is short (the original has about 18 overflowing items). Image and Video share one composer pattern. There's less promo noise.
+- **Changes from the original:** guests can generate immediately. The nav keeps the original's long, overflowing link row for fidelity, but only Explore, Image, Video and Assets are real routes; the rest are display-only links to Explore for now. Image and Video share one composer pattern. There's less promo noise.
 
 ## 2. Scope
 
