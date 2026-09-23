@@ -152,6 +152,15 @@ export function ReuseIcon(props: IconProps) {
   );
 }
 
+export function WandIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="m3 21 11-11" />
+      <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M12.2 6.2 11 5" />
+    </Stroke>
+  );
+}
+
 export function AlertIcon(props: IconProps) {
   return (
     <Stroke {...props}>

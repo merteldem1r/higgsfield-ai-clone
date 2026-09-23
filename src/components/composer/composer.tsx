@@ -3,7 +3,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 
 import { useApp } from "@/components/app-provider";
-import { AspectIcon, MinusIcon, PlusIcon, SparkleIcon, SpinnerIcon } from "@/components/icons";
+import { AspectIcon, MinusIcon, PlusIcon, ReuseIcon, SparkleIcon, SpinnerIcon, WandIcon } from "@/components/icons";
 import { useT } from "@/components/locale-provider";
 import {
   ASPECTS,
@@ -19,6 +19,7 @@ import {
 } from "@/lib/credits";
 
 import { CHIP_CLASS, ChipMenu, type ChipOption } from "./chip-menu";
+import { requestImprovedPrompt, type ImproveOutcome } from "./improve-prompt";
 import type { GenerateRequest } from "./types";
 
 export type ComposerHandle = {
@@ -30,6 +31,10 @@ export type ComposerHandle = {
 
 const MAX_TEXTAREA_PX = 110; // 5 lines at 22px
 const COUNTER_FROM = MAX_PROMPT_LENGTH * 0.8;
+const IMPROVE_ERRORS = {
+  IP_LIMIT: "composer.improveLimit",
+  TIMEOUT: "composer.improveTimeout",
+} as const;
 
 const GLYPH: Record<AspectId, string> = {
   "1:1": "h-3.5 w-3.5",
@@ -81,10 +86,34 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
   const [aspect, setAspect] = useState<AspectId>(DEFAULT_ASPECT);
   const [batch, setBatch] = useState(BATCH_MIN);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [improving, setImproving] = useState(false);
+  // True while the improved prompt is typed into the textarea.
+  const [revealing, setRevealing] = useState(false);
+  // What Undo restores. Cleared as soon as the text stops being the improver's output.
+  const [original, setOriginal] = useState<string | null>(null);
+  const [improveLimited, setImproveLimited] = useState(false);
+  const improveAbort = useRef<AbortController | null>(null);
+  const revealFrame = useRef<number | null>(null);
+
+  function stopReveal() {
+    if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
+    revealFrame.current = null;
+    setRevealing(false);
+  }
+
+  useEffect(
+    () => () => {
+      improveAbort.current?.abort();
+      if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
+    },
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
     setPrompt: (untrimmed, select) => {
       const next = untrimmed.slice(0, MAX_PROMPT_LENGTH);
+      stopReveal();
+      setOriginal(null);
       setPrompt(next);
       // After React commits the new value; preventScroll so callers own any scrolling.
       requestAnimationFrame(() => {
@@ -114,7 +143,80 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
   const cost = batchCost(model, batch);
   const needsCredits = credits !== null && cost.credits > credits;
   const trimmed = prompt.trim();
-  const disabled = inFlight || blocked || (!needsCredits && trimmed === "");
+  const busyImproving = improving || revealing;
+  const disabled = inFlight || blocked || busyImproving || (!needsCredits && trimmed === "");
+  const canImprove = !inFlight && !busyImproving && !improveLimited && trimmed !== "";
+  const improveTitle = improveLimited
+    ? t("composer.improveLimit")
+    : trimmed === ""
+      ? t("composer.improveEmpty")
+      : t("composer.improve");
+
+  function focusEnd(length: number) {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    el.setSelectionRange(length, length);
+  }
+
+  // Types the new prompt in over well under a second, so the swap reads as a rewrite rather than a jump.
+  function reveal(text: string) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPrompt(text);
+      requestAnimationFrame(() => focusEnd(text.length));
+      return;
+    }
+    const duration = Math.min(900, 300 + text.length * 1.5);
+    const startedAt = performance.now();
+    setRevealing(true);
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - (1 - progress) ** 3;
+      setPrompt(text.slice(0, Math.ceil(text.length * eased)));
+      if (progress < 1) {
+        revealFrame.current = requestAnimationFrame(step);
+      } else {
+        revealFrame.current = null;
+        setRevealing(false);
+        focusEnd(text.length);
+      }
+    };
+    revealFrame.current = requestAnimationFrame(step);
+  }
+
+  async function improve() {
+    if (!canImprove) return;
+    const source = prompt;
+    const controller = new AbortController();
+    improveAbort.current = controller;
+    setImproving(true);
+    let outcome: ImproveOutcome;
+    try {
+      outcome = await requestImprovedPrompt(source.trim(), controller.signal);
+    } catch {
+      return; // aborted: the composer unmounted
+    } finally {
+      setImproving(false);
+    }
+    if (!outcome.ok) {
+      if (outcome.code === "IP_LIMIT") setImproveLimited(true);
+      const key = outcome.code in IMPROVE_ERRORS
+        ? IMPROVE_ERRORS[outcome.code as keyof typeof IMPROVE_ERRORS]
+        : "composer.improveFailed";
+      showToast({ tone: "danger", text: t(key) });
+      return;
+    }
+    setOriginal(source);
+    reveal(outcome.prompt.slice(0, MAX_PROMPT_LENGTH));
+  }
+
+  function undo() {
+    if (original === null) return;
+    stopReveal();
+    setPrompt(original);
+    setOriginal(null);
+    requestAnimationFrame(() => focusEnd(original.length));
+  }
 
   function submit() {
     if (disabled) return;
@@ -122,6 +224,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
       openAuthModal("out-of-credits");
       return;
     }
+    setOriginal(null);
     void onGenerate({ prompt: trimmed, model, aspect, batch }).then((ok) => {
       // Clear only if the user hasn't started typing the next prompt while this one ran.
       if (ok) setPrompt((current) => (current.trim() === trimmed ? "" : current));
@@ -149,38 +252,77 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
           >
             <PlusIcon className="size-4" />
           </button>
+          <button
+            type="button"
+            disabled={!canImprove}
+            aria-label={t("composer.improve")}
+            aria-busy={improving}
+            title={improveTitle}
+            onClick={() => void improve()}
+            className={`group relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-bg-3 text-text-1 transition-colors duration-150 hover:bg-bg-5 ${
+              busyImproving ? "" : "disabled:opacity-50"
+            }`}
+          >
+            {improving && (
+              <>
+                {/* A brand-colored ring orbiting the button edge; the inner plate masks all but 1.5px of it. */}
+                <span aria-hidden className="absolute -inset-2 bg-brand-conic motion-safe:animate-orbit" />
+                <span aria-hidden className="absolute inset-[1.5px] rounded-[8.5px] bg-bg-3" />
+              </>
+            )}
+            {busyImproving ? (
+              <SparkleIcon gradient className="relative size-4 motion-safe:animate-breathe" />
+            ) : (
+              <WandIcon className="relative size-4 transition-[rotate,color] duration-200 group-enabled:group-hover:text-accent motion-safe:group-enabled:group-hover:-rotate-12" />
+            )}
+          </button>
           <label htmlFor="prompt" className="sr-only">
             {t("composer.prompt")}
           </label>
-          <textarea
-            id="prompt"
-            ref={textareaRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                submit();
-              }
-            }}
-            onPaste={(e) => {
-              const el = e.currentTarget;
-              const replaced = el.selectionEnd - el.selectionStart;
-              const after = el.value.length - replaced + e.clipboardData.getData("text").length;
-              // maxLength cuts the paste silently; say so, or the missing tail looks like a bug.
-              if (after > MAX_PROMPT_LENGTH) {
-                showToast({
-                  tone: "neutral",
-                  text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }),
-                });
-              }
-            }}
-            rows={1}
-            maxLength={MAX_PROMPT_LENGTH}
-            aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
-            placeholder={t("composer.placeholder")}
-            className="field-sizing-content max-h-27.5 min-h-8 flex-1 resize-none bg-transparent py-1.25 text-[15px] leading-5.5 text-text-1 outline-none placeholder:text-text-placeholder"
-          />
+          <div className="relative flex min-w-0 flex-1">
+            <textarea
+              id="prompt"
+              ref={textareaRef}
+              value={prompt}
+              readOnly={busyImproving}
+              aria-busy={busyImproving}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                setOriginal(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              onPaste={(e) => {
+                const el = e.currentTarget;
+                const replaced = el.selectionEnd - el.selectionStart;
+                const after = el.value.length - replaced + e.clipboardData.getData("text").length;
+                // maxLength cuts the paste silently; say so, or the missing tail looks like a bug.
+                if (after > MAX_PROMPT_LENGTH) {
+                  showToast({
+                    tone: "neutral",
+                    text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }),
+                  });
+                }
+              }}
+              rows={1}
+              maxLength={MAX_PROMPT_LENGTH}
+              aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
+              placeholder={t("composer.placeholder")}
+              className={`field-sizing-content max-h-27.5 min-h-8 flex-1 resize-none bg-transparent py-1.25 text-[15px] leading-5.5 text-text-1 outline-none transition-opacity duration-200 placeholder:text-text-placeholder ${
+                improving ? "opacity-40" : ""
+              }`}
+            />
+            {improving && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-sm shimmer-brand motion-safe:animate-shimmer-fast motion-reduce:hidden"
+              />
+            )}
+          </div>
           {prompt.length >= COUNTER_FROM && (
             <span
               id="prompt-count"
@@ -193,7 +335,26 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
           )}
         </div>
 
+        <span className="sr-only" aria-live="polite">
+          {improving ? t("composer.improving") : original !== null ? t("composer.improved") : ""}
+        </span>
+
         <div className="-mx-3 flex gap-2 overflow-x-auto overscroll-x-contain pl-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:pl-0">
+          {original !== null && (
+            <button
+              type="button"
+              onClick={undo}
+              disabled={revealing}
+              className={`${CHIP_CLASS} border-accent/40 motion-safe:animate-pop-in`}
+            >
+              <SparkleIcon gradient className="size-3.5" />
+              <span className="text-text-2">{t("composer.improved")}</span>
+              <span aria-hidden className="h-3.5 w-px bg-border-3" />
+              <ReuseIcon className="size-3.5" />
+              {t("composer.undo")}
+              <span className="sr-only">{t("composer.undoSr")}</span>
+            </button>
+          )}
           <ChipMenu
             label={t("composer.model")}
             icon={<SparkleIcon gradient />}
