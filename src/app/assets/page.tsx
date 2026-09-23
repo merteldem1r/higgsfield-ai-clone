@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { AssetsBrowser } from "./assets-browser";
 
-export const metadata: Metadata = { title: "Assets — Higgsfield clone" };
+export const metadata: Metadata = { title: "Assets — Higgsfield AI Clone" };
 
 export default function AssetsPage() {
   return (

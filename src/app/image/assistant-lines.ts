@@ -1,10 +1,12 @@
 import { batchCost, MODELS, UPGRADE_BONUS, type AspectId } from "@/lib/credits";
+import type { Locale, MessageKey, T } from "@/lib/i18n";
 
 import type { GenerateRequest, Run } from "./types";
 
 // The assistant's voice. Every line is built from facts we actually have (settings, timing, credits,
 // error codes). Nothing here describes image content: nothing looked at the image, so it can't claim to.
 // Wording is picked by hashing the run id, so a reload shows the same reply.
+// The varied wording is English-only; other locales get one translated line per slot.
 
 function hash(text: string): number {
   let h = 2166136261;
@@ -28,9 +30,13 @@ function takes({ batch }: GenerateRequest): string {
   return batch === 1 ? "one frame" : `${batch} takes`;
 }
 
-export function introLine(run: Run): string {
+export function introLine(run: Run, locale: Locale, t: T): string {
   const req = run.request;
   const model = MODELS[req.model].label;
+  if (locale !== "en") {
+    const takesText = req.batch === 1 ? t("assistant.takes.one") : t("assistant.takes.many", { n: req.batch });
+    return t("assistant.intro", { takes: takesText, aspect: req.aspect, model });
+  }
   const shape = ORIENTATION[req.aspect];
   return pick(
     [
@@ -52,12 +58,24 @@ function seconds(run: Run): string | null {
   return `${Math.max((run.completedAt - run.startedAt) / 1000, 0.1).toFixed(1)}s`;
 }
 
-export function outroLine(run: Run): string {
+export function outroLine(run: Run, locale: Locale, t: T): string {
   const req = run.request;
   const model = MODELS[req.model].label;
   const cost = batchCost(req.model, req.batch).credits;
   const time = seconds(run);
   const many = run.images.length > 1;
+
+  if (locale !== "en") {
+    if (run.status === "failed") return t("assistant.failed", { model, cost });
+    const done = time ? t("assistant.done", { time }) : t("assistant.doneNoTime");
+    const spent =
+      run.creditsLeft === undefined
+        ? t("assistant.spent", { cost })
+        : run.creditsLeft === 0
+          ? t("assistant.spentLast", { cost })
+          : t("assistant.spentLeft", { cost, left: run.creditsLeft });
+    return `${done} ${spent} ${t("assistant.nudge")}`;
+  }
 
   if (run.status === "failed") {
     return pick(
@@ -103,41 +121,45 @@ export function outroLine(run: Run): string {
 }
 
 // Turns the API rejected before spending anything. Worded as the assistant, not as an error dialog.
-export function rejectionLine(run: Run, member = false): string {
+export function rejectionLine(run: Run, t: T, member = false): string {
   const code = run.rejection?.code ?? "UNKNOWN";
   const cost = batchCost(run.request.model, run.request.batch).credits;
   switch (code) {
     case "INSUFFICIENT_CREDITS":
       return member
-        ? `This needs ${cost} credits, more than you have left. A plan tops you up; your images stay right here.`
-        : `This needs ${cost} credits, more than you have left. Sign up to get ${UPGRADE_BONUS} more; your images stay right here.`;
+        ? t("assistant.reject.creditsMember", { cost })
+        : t("assistant.reject.creditsGuest", { cost, bonus: UPGRADE_BONUS });
     case "GLOBAL_CAP":
-      return "Today's demo budget is used up, so I can't render more until tomorrow. Everything you've made is still here.";
+      return t("assistant.reject.globalCap");
     case "IP_LIMIT":
-      return "Your network has hit today's image limit. Come back tomorrow and we'll pick this up.";
+      return t("assistant.reject.ipLimit");
     case "FAL_DISABLED":
-      return "Generation is paused right now. Give it a few minutes and try again.";
+      return t("assistant.reject.paused");
     case "NETWORK":
-      return "I couldn't reach the server. Check your connection and try again.";
+      return t("assistant.reject.network");
     default:
-      return `That didn't go through: ${run.rejection?.message ?? "an unknown error."} Nothing was charged.`;
+      // The server's message is English; it only shows for codes the switch above doesn't know.
+      return t("assistant.reject.unknown", {
+        message: run.rejection?.message ?? t("assistant.reject.unknownMessage"),
+      });
   }
 }
 
 export type FollowUp = { label: string; request: GenerateRequest; cost: number };
 
 // Three one-step variations of the last run. Each only loads the composer; nothing generates or spends.
-export function followUps(req: GenerateRequest): FollowUp[] {
+export function followUps(req: GenerateRequest, t: T): FollowUp[] {
   const tall = req.aspect === "9:16" || req.aspect === "3:4";
-  const variants: { label: string; change: Partial<GenerateRequest> }[] = [
+  const variants: { key: MessageKey; change: Partial<GenerateRequest> }[] = [
     req.model === "flux-schnell"
-      ? { label: "Try it on Flux Dev", change: { model: "flux-dev" } }
-      : { label: "Faster on Flux Schnell", change: { model: "flux-schnell" } },
-    req.batch === 1 ? { label: "Make 4 takes", change: { batch: 4 } } : { label: "Just one take", change: { batch: 1 } },
-    tall ? { label: "Go wide 16:9", change: { aspect: "16:9" } } : { label: "Go vertical 9:16", change: { aspect: "9:16" } },
+      ? { key: "assistant.follow.tryOn", change: { model: "flux-dev" } }
+      : { key: "assistant.follow.fasterOn", change: { model: "flux-schnell" } },
+    req.batch === 1 ? { key: "assistant.follow.four", change: { batch: 4 } } : { key: "assistant.follow.one", change: { batch: 1 } },
+    tall ? { key: "assistant.follow.wide", change: { aspect: "16:9" } } : { key: "assistant.follow.vertical", change: { aspect: "9:16" } },
   ];
-  return variants.map(({ label, change }) => {
+  return variants.map(({ key, change }) => {
     const request = { ...req, ...change };
+    const label = t(key, { model: MODELS[request.model].label });
     return { label, request, cost: batchCost(request.model, request.batch).credits };
   });
 }

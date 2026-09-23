@@ -5,34 +5,37 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { ChevronUpIcon } from "@/components/icons";
+import { useT } from "@/components/locale-provider";
+import type { MessageKey } from "@/lib/i18n";
 
 const ADVANCE_MS = 6000;
 
-const SLIDES = [
+// Alt text stays English for now: it describes our own showcase images, not UI.
+const SLIDES: { title: MessageKey; tagline: MessageKey; alt: string; src: string; href: string }[] = [
   {
-    title: "Flux Dev is here",
-    tagline: "Richer light and finer detail, 6 credits an image.",
+    title: "home.slide.dev.title",
+    tagline: "home.slide.dev.text",
     src: "/showcase/g12.jpg",
     alt: "A futuristic white train station in soft morning light",
     href: "/image?model=flux-dev",
   },
   {
-    title: "Six credits on us",
-    tagline: "Three images before anyone asks you to sign up.",
+    title: "home.slide.free.title",
+    tagline: "home.slide.free.text",
     src: "/showcase/g08.jpg",
     alt: "A desert canyon road at golden hour",
     href: "/image",
   },
   {
-    title: "Four takes, one prompt",
-    tagline: "Set the batch to 4 and keep the best frame.",
+    title: "home.slide.batch.title",
+    tagline: "home.slide.batch.text",
     src: "/showcase/g04.jpg",
     alt: "An empty neon-lit alley in the rain",
     href: "/image",
   },
   {
-    title: "Frame it your way",
-    tagline: "Five aspect ratios, from 9:16 stories to 16:9 cinema.",
+    title: "home.slide.aspect.title",
+    tagline: "home.slide.aspect.text",
     src: "/showcase/g01.jpg",
     alt: "Aerial view of a river through an autumn forest",
     href: "/image",
@@ -56,6 +59,7 @@ function step(track: HTMLElement | null, direction: 1 | -1) {
 export function PromoCarousel() {
   const trackRef = useRef<HTMLUListElement>(null);
   const [paused, setPaused] = useState(false);
+  const t = useT();
 
   // Auto-advance pauses on hover/focus and in background tabs, and is off under reduced motion.
   useEffect(() => {
@@ -69,7 +73,7 @@ export function PromoCarousel() {
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="What's new"
+      aria-label={t("home.whatsNew")}
       className="relative"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -82,9 +86,9 @@ export function PromoCarousel() {
       >
         {SLIDES.map((slide, i) => (
           <li
-            key={slide.title}
+            key={t(slide.title)}
             aria-roledescription="slide"
-            aria-label={`${i + 1} of ${SLIDES.length}`}
+            aria-label={t("home.slideOf", { i: i + 1, n: SLIDES.length })}
             className="w-[85%] shrink-0 snap-start sm:w-[60%] lg:w-[calc((100%-36px)/3.25)]"
           >
             <Link href={slide.href} className="group block rounded-xl">
@@ -102,18 +106,18 @@ export function PromoCarousel() {
                 <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/8 ring-inset transition-shadow duration-150 group-hover:ring-accent/50" />
               </div>
               <h3 className="mt-3 font-display text-h3 uppercase transition-colors duration-150 group-hover:text-accent-text">
-                {slide.title}
+                {t(slide.title)}
               </h3>
-              <p className="mt-0.5 text-sm text-text-2">{slide.tagline}</p>
+              <p className="mt-0.5 text-sm text-text-2">{t(slide.tagline)}</p>
             </Link>
           </li>
         ))}
       </ul>
 
-      <button type="button" aria-label="Previous" onClick={() => step(trackRef.current, -1)} className={`${ARROW} left-2`}>
+      <button type="button" aria-label={t("home.prev")} onClick={() => step(trackRef.current, -1)} className={`${ARROW} left-2`}>
         <ChevronUpIcon className="size-4 -rotate-90" />
       </button>
-      <button type="button" aria-label="Next" onClick={() => step(trackRef.current, 1)} className={`${ARROW} right-2`}>
+      <button type="button" aria-label={t("home.next")} onClick={() => step(trackRef.current, 1)} className={`${ARROW} right-2`}>
         <ChevronUpIcon className="size-4 rotate-90" />
       </button>
     </section>

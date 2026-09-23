@@ -1,4 +1,4 @@
-# PLAN — Higgsfield clone (24h take-home)
+# PLAN — Higgsfield AI Clone (24h take-home)
 
 **Thesis:** Copy the real structure closely, but make the core loop work end to end. A visitor types a prompt and gets a real image with no signup wall, and the server enforces credits so the browser can't bypass them.
 

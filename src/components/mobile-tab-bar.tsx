@@ -4,22 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 
+import type { MessageKey } from "@/lib/i18n";
+
 import { FOCUS_COMPOSER_EVENT, FOCUS_PARAM } from "./composer/handoff";
+import { useT } from "./locale-provider";
 import { BoxIcon, DiamondIcon, HomeIcon, SparkleIcon, UsersIcon } from "./icons";
 
-type Tab = { label: string; route: string; icon: ComponentType<SVGProps<SVGSVGElement>> };
+type Tab = { label: MessageKey; route: string; icon: ComponentType<SVGProps<SVGSVGElement>> };
 
 const LEFT: Tab[] = [
-  { label: "Home", route: "/", icon: HomeIcon },
-  { label: "Community", route: "/community", icon: UsersIcon },
+  { label: "nav.home", route: "/", icon: HomeIcon },
+  { label: "nav.community", route: "/community", icon: UsersIcon },
 ];
 const RIGHT: Tab[] = [
-  { label: "Assets", route: "/assets", icon: BoxIcon },
-  { label: "Pricing", route: "/pricing", icon: DiamondIcon },
+  { label: "nav.assets", route: "/assets", icon: BoxIcon },
+  { label: "nav.pricing", route: "/pricing", icon: DiamondIcon },
 ];
 
 export function MobileTabBar() {
   const pathname = usePathname();
+  const t = useT();
 
   function renderTab({ label, route, icon: Icon }: Tab) {
     const active = route === "/" ? pathname === "/" : pathname.startsWith(route);
@@ -32,8 +36,8 @@ export function MobileTabBar() {
             active ? "text-text-1" : "text-text-2"
           }`}
         >
-          <Icon className="size-5.5" />
-          {label}
+          <Icon className="size-5.5 shrink-0" />
+          <span className="max-w-full truncate px-0.5">{t(label)}</span>
         </Link>
       </li>
     );
@@ -41,7 +45,7 @@ export function MobileTabBar() {
 
   return (
     <nav
-      aria-label="Tabs"
+      aria-label={t("nav.tabs")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border-1 bg-tabbar pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="flex items-start px-2">
@@ -49,7 +53,7 @@ export function MobileTabBar() {
         <li className="flex flex-1 justify-center">
           <Link
             href={`/image?${FOCUS_PARAM}=1`}
-            aria-label="Create an image"
+            aria-label={t("nav.createImage")}
             onClick={(e) => {
               if (pathname !== "/image") return;
               e.preventDefault();

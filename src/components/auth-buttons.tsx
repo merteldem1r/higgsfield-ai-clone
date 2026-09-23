@@ -6,6 +6,8 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
 import { logOut } from "@/lib/supabase/session";
 
+import { LOCALE_NAMES } from "@/lib/i18n";
+
 import { useApp } from "./app-provider";
 import {
   BoxIcon,
@@ -18,16 +20,17 @@ import {
   SpinnerIcon,
   UsersIcon,
 } from "./icons";
+import { useLocale, useT } from "./locale-provider";
 
 // One dot per credit of a new member's starting balance (free credits + the upgrade bonus).
 const METER_DOTS = FREE_CREDITS + UPGRADE_BONUS;
 const DOT_PITCH = 9;
-const CREDITS_HELP = `Every image costs credits: ${MODELS["flux-schnell"].label} ${MODELS["flux-schnell"].credits}, ${MODELS["flux-dev"].label} ${MODELS["flux-dev"].credits}.`;
 // Long enough to cross the gap from the avatar into the card without it closing.
 const CLOSE_DELAY_MS = 150;
 
 export function AuthButtons() {
   const { account, openAuthModal } = useApp();
+  const t = useT();
 
   // Holds the space while the session is read, so a signed-in visitor never sees Login flash first.
   if (account === null) return <span aria-hidden className="size-8" />;
@@ -40,14 +43,14 @@ export function AuthButtons() {
         onClick={() => openAuthModal("login")}
         className="flex h-8 items-center rounded-md bg-accent-tint-2 px-3 text-sm font-medium text-accent-text transition-colors duration-150 hover:bg-accent-badge-bg max-sm:hidden"
       >
-        Login
+        {t("auth.login")}
       </button>
       <button
         type="button"
         onClick={() => openAuthModal("signup")}
         className="flex h-8 items-center rounded-md bg-brand-gradient px-3 text-sm font-semibold text-accent-ink transition-[filter] duration-150 hover:brightness-110"
       >
-        Sign up
+        {t("auth.signup")}
       </button>
     </>
   );
@@ -55,6 +58,13 @@ export function AuthButtons() {
 
 function AccountMenu({ email, handle }: { email: string; handle: string | null }) {
   const { credits } = useApp();
+  const { locale, t } = useLocale();
+  const creditsHelp = t("account.creditsHelp", {
+    a: MODELS["flux-schnell"].label,
+    aCost: MODELS["flux-schnell"].credits,
+    b: MODELS["flux-dev"].label,
+    bCost: MODELS["flux-dev"].credits,
+  });
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -120,7 +130,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={`Account: ${name}`}
+        aria-label={t("account.named", { name })}
         className="flex size-8 items-center justify-center rounded-full bg-brand-gradient p-0.5 transition-[filter] duration-150 hover:brightness-110"
       >
         <span
@@ -136,7 +146,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
         <div className="absolute top-full right-0 z-50 pt-2">
           <div
             role="menu"
-            aria-label="Account"
+            aria-label={t("account.label")}
             className="w-72 rounded-2xl border border-border-3 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in"
           >
             <div className="flex items-center gap-3 px-2.5 pt-2 pb-3">
@@ -147,7 +157,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               </span>
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{name}</p>
-                <p className="truncate text-sm text-text-2">Free Plan</p>
+                <p className="truncate text-sm text-text-2">{t("account.freePlan")}</p>
               </div>
             </div>
 
@@ -159,13 +169,13 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                 className="group flex items-center justify-between gap-2 text-sm"
               >
                 <span className="flex items-center gap-1.5 font-medium">
-                  Credits
-                  <span title={CREDITS_HELP} aria-label={CREDITS_HELP} className="text-text-3">
+                  {t("account.credits")}
+                  <span title={creditsHelp} aria-label={creditsHelp} className="text-text-3">
                     <HelpIcon className="size-4" />
                   </span>
                 </span>
                 <span className="flex items-center gap-0.5 text-text-2 tabular-nums transition-colors duration-150 group-hover:text-text-1">
-                  {credits ?? "–"} left
+                  {t("account.left", { n: credits ?? "–" })}
                   <ChevronRightIcon className="size-4" />
                 </span>
               </Link>
@@ -174,7 +184,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2.5 text-sm font-medium">
                   <CrownIcon className="size-4.5 text-brand-peach" />
-                  Go Premium
+                  {t("account.goPremium")}
                 </span>
                 <Link
                   href="/pricing"
@@ -182,23 +192,23 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                   onClick={close}
                   className="flex h-8 items-center rounded-full bg-brand-gradient px-3.5 text-sm font-semibold text-accent-ink transition-[filter] duration-150 hover:brightness-110"
                 >
-                  Upgrade
+                  {t("account.upgrade")}
                 </Link>
               </div>
             </div>
 
             <div className="mt-1.5 flex flex-col">
               <MenuLink href="/assets" icon={<BoxIcon />} onClick={close}>
-                My assets
+                {t("account.myAssets")}
               </MenuLink>
               <MenuLink href="/community" icon={<UsersIcon />} onClick={close}>
-                Community
+                {t("nav.community")}
               </MenuLink>
-              {/* One language only, so it's a label, not a picker. */}
+              {/* A label, not a picker: the globe in the header (or the mobile menu) switches it. */}
               <div className="flex h-10 items-center gap-3 px-2.5 text-sm text-text-1 [&>svg]:size-4.5 [&>svg]:text-text-2">
                 <GlobeIcon />
-                <span className="flex-1">Language</span>
-                <span className="text-text-2">English</span>
+                <span className="flex-1">{t("locale.label")}</span>
+                <span className="text-text-2">{LOCALE_NAMES[locale]}</span>
               </div>
             </div>
 
@@ -211,7 +221,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               className="flex h-10 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm font-medium text-text-1 transition-colors duration-150 hover:bg-bg-3 disabled:text-text-disabled [&>svg]:size-4.5 [&>svg]:text-text-2"
             >
               {leaving ? <SpinnerIcon className="motion-safe:animate-spin" /> : <LogOutIcon />}
-              {leaving ? "Signing out…" : "Sign out"}
+              {leaving ? t("account.signingOut") : t("account.signOut")}
             </button>
           </div>
         </div>

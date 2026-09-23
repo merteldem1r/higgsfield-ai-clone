@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useApp, type Toast } from "./app-provider";
 import { AlertIcon, XIcon } from "./icons";
+import { useT } from "./locale-provider";
 
 const EXIT_MS = 150;
 
@@ -23,6 +24,7 @@ export function ToastViewport() {
 
 function ToastCard({ toast }: { toast: Toast }) {
   const { dismissToast } = useApp();
+  const t = useT();
   const [leaving, setLeaving] = useState(false);
   const [paused, setPaused] = useState(false);
   const pointerY = useRef<number | null>(null);
@@ -74,7 +76,7 @@ function ToastCard({ toast }: { toast: Toast }) {
       <button
         type="button"
         onClick={() => setLeaving(true)}
-        aria-label="Dismiss"
+        aria-label={t("toast.dismiss")}
         className="shrink-0 rounded-sm p-0.5 text-text-2 transition-colors duration-150 hover:text-text-1"
       >
         <XIcon className="size-4" />

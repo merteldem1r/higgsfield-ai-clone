@@ -12,7 +12,9 @@ import {
 } from "@/components/composer/handoff";
 import { useFavourite } from "@/components/favourite-button";
 import { SparkleIcon } from "@/components/icons";
+import { useT } from "@/components/locale-provider";
 import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
+import type { MessageKey } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 
 import { AmbientBackground } from "./ambient-background";
@@ -27,10 +29,11 @@ const HISTORY_LIMIT = 40;
 // composer locks after one. The assistant explains why in the thread (assistant-lines.ts).
 const BLOCKING = new Set(["GLOBAL_CAP", "IP_LIMIT", "FAL_DISABLED"]);
 
-const STARTERS = [
-  { label: "Lighthouse under the Milky Way", prompt: "a lone lighthouse on a sea cliff under a starry sky, milky way, long exposure" },
-  { label: "Rainy neon alley", prompt: "a neon-lit rainy alley in Tokyo at night, empty, reflections on wet pavement, cinematic wide shot" },
-  { label: "Glass house in the snow", prompt: "a modern glass house in a snowy pine forest at blue hour, warm interior lights glowing" },
+// Labels are translated; the prompts they load stay in English, like any prompt.
+const STARTERS: { label: MessageKey; prompt: string }[] = [
+  { label: "image.starter.lighthouse", prompt: "a lone lighthouse on a sea cliff under a starry sky, milky way, long exposure" },
+  { label: "image.starter.alley", prompt: "a neon-lit rainy alley in Tokyo at night, empty, reflections on wet pavement, cinematic wide shot" },
+  { label: "image.starter.glass", prompt: "a modern glass house in a snowy pine forest at blue hour, warm interior lights glowing" },
 ];
 
 type HistoryRow = {
@@ -88,6 +91,7 @@ async function loadHistory(): Promise<Run[]> {
 
 export function ImageStudio({ hero }: { hero: ReactNode }) {
   const { refreshCredits, setCredits, openAuthModal } = useApp();
+  const t = useT();
   const [runs, setRuns] = useState<Run[]>([]);
   const [inFlight, setInFlight] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -253,7 +257,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
         {runs.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-8 py-10">
             {hero}
-            <ul aria-label="Try one of these" className="flex flex-wrap justify-center gap-2">
+            <ul aria-label={t("image.starters")} className="flex flex-wrap justify-center gap-2">
               {STARTERS.map((starter) => (
                 <li key={starter.label}>
                   <button
@@ -262,7 +266,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
                     className="flex h-9 items-center gap-2 rounded-full border border-border-3 bg-bg-1 px-3.5 text-sm font-medium text-text-2 transition-colors duration-150 hover:border-accent/50 hover:bg-bg-3 hover:text-text-1"
                   >
                     <SparkleIcon gradient className="size-3.5" />
-                    {starter.label}
+                    {t(starter.label)}
                   </button>
                 </li>
               ))}

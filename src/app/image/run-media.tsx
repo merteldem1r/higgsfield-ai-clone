@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { FavouriteButton } from "@/components/favourite-button";
 import { AlertIcon, DownloadIcon, SparkleIcon } from "@/components/icons";
+import { useT } from "@/components/locale-provider";
 import { MODELS, type AspectId } from "@/lib/credits";
 import { download } from "@/lib/download";
 
@@ -108,6 +109,7 @@ function GeneratingTile({
   phase: string;
 }) {
   const [elapsed, setElapsed] = useState(0);
+  const t = useT();
   const barRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -123,13 +125,13 @@ function GeneratingTile({
   return (
     <div
       role="status"
-      aria-label="Generating image"
+      aria-label={t("tile.generatingLabel")}
       className={`relative isolate overflow-hidden rounded-xl bg-bg-2 ring-1 ring-white/6 ring-inset motion-safe:animate-rise-in ${className}`}
     >
       <Glow phase={phase} />
       <div className="flex size-full flex-col items-center justify-center gap-1.5 px-3 text-center">
         <SparkleIcon gradient className="size-6 motion-safe:animate-breathe" />
-        <span className="mt-0.5 text-sm font-medium text-text-1">Generating</span>
+        <span className="mt-0.5 text-sm font-medium text-text-1">{t("tile.generating")}</span>
         <span className="text-xs text-text-2 tabular-nums">{elapsed.toFixed(1)}s</span>
       </div>
       <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white/8">
@@ -143,20 +145,21 @@ function GeneratingTile({
 }
 
 function FailedTile({ className, onRetry, disabled }: { className: string; onRetry: () => void; disabled: boolean }) {
+  const t = useT();
   return (
     <div
       className={`flex flex-col items-center justify-center gap-2 rounded-xl bg-bg-2 px-4 text-center ring-1 ring-danger/25 ring-inset ${className}`}
     >
       <AlertIcon className="size-5 text-danger" />
-      <p className="text-sm font-medium text-text-1">Generation failed</p>
-      <p className="text-xs text-text-2">Your credits were refunded.</p>
+      <p className="text-sm font-medium text-text-1">{t("tile.failed")}</p>
+      <p className="text-xs text-text-2">{t("tile.refunded")}</p>
       <button
         type="button"
         onClick={onRetry}
         disabled={disabled}
         className="mt-2 flex h-8 items-center rounded-md border border-border-3 bg-bg-1 px-3 text-xs font-semibold text-text-1 transition-colors duration-150 hover:bg-bg-3 disabled:text-text-disabled disabled:hover:bg-bg-1"
       >
-        Try again
+        {t("thread.tryAgain")}
       </button>
     </div>
   );
@@ -183,6 +186,7 @@ function ImageTile({
   onFavourite: (favourite: boolean) => void;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const t = useT();
 
   return (
     <div className={`group relative isolate overflow-hidden rounded-xl bg-bg-2 ${className}`}>
@@ -199,12 +203,12 @@ function ImageTile({
         }`}
       />
       <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/6 ring-inset" />
-      <button type="button" onClick={onOpen} aria-label="Open image" className="absolute inset-0 cursor-zoom-in" />
+      <button type="button" onClick={onOpen} aria-label={t("tile.open")} className="absolute inset-0 cursor-zoom-in" />
       <div className="pointer-events-none absolute top-2.5 right-2.5 flex gap-1.5 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
         {image.id && (
           <FavouriteButton favourite={image.favourite} onChange={onFavourite} className="pointer-events-auto size-8" />
         )}
-        <button type="button" onClick={() => void download(image.url, fileName)} aria-label="Download" className={ICON_BUTTON}>
+        <button type="button" onClick={() => void download(image.url, fileName)} aria-label={t("tile.download")} className={ICON_BUTTON}>
           <DownloadIcon className="size-4" />
         </button>
       </div>

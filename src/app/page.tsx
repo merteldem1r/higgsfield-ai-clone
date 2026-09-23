@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SiteFooter } from "@/components/site-footer";
+import { getT } from "@/lib/i18n/server";
 
 import { HeroComposer, HomeComposerProvider } from "./_home/home-composer";
 import { ModelChips } from "./_home/model-chips";
@@ -9,7 +10,8 @@ import { PresetRow } from "./_home/preset-row";
 import { PromoCarousel } from "./_home/promo-carousel";
 import { ShowcaseGrid } from "./_home/showcase-grid";
 
-export default function Home() {
+export default async function Home() {
+  const t = await getT();
   return (
     <>
       <main className="mx-auto w-full max-w-360 flex-1 overflow-x-clip px-4 pt-4 sm:px-6">
@@ -19,11 +21,11 @@ export default function Home() {
           <section aria-labelledby="hero-title" className="flex flex-col items-center gap-8 pt-16 pb-4 sm:pt-20">
             <div className="flex flex-col items-center gap-3 text-center">
               <h1 id="hero-title" className="font-display text-display-sm uppercase sm:text-display">
-                Type a scene.
+                {t("home.heroTop")}
                 <br />
-                <span className="text-brand-gradient">Get a real image.</span>
+                <span className="text-brand-gradient">{t("home.heroAccent")}</span>
               </h1>
-              <p className="text-base text-text-2">Flux runs right here. Six free credits, no signup.</p>
+              <p className="text-base text-text-2">{t("home.heroText")}</p>
             </div>
             <HeroComposer />
             <ModelChips />
@@ -31,14 +33,14 @@ export default function Home() {
 
           <Section
             id="showcase"
-            title="Made with Flux"
-            subtitle="Every image here came out of this site's composer, prompt and all."
+            title={t("home.showcaseTitle")}
+            subtitle={t("home.showcaseText")}
             action={
               <Link
                 href="/image"
                 className="flex h-9 shrink-0 items-center rounded-md bg-bg-3 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-5"
               >
-                Open Image
+                {t("home.openImage")}
               </Link>
             }
           >
@@ -47,8 +49,8 @@ export default function Home() {
 
           <Section
             id="presets"
-            title="Start from a style"
-            subtitle="Pick a look, then type your own subject over the highlighted words."
+            title={t("home.presetsTitle")}
+            subtitle={t("home.presetsText")}
           >
             <PresetRow />
           </Section>

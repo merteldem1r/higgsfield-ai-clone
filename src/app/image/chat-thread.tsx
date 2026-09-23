@@ -7,13 +7,14 @@ import { useApp } from "@/components/app-provider";
 
 import { LogoMark, ReuseIcon, SparkleIcon } from "@/components/icons";
 import { Lightbox } from "@/components/lightbox";
+import { useLocale, useT } from "@/components/locale-provider";
 import { MODELS, UPGRADE_BONUS } from "@/lib/credits";
 
 import { followUps, introLine, outroLine, rejectionLine } from "./assistant-lines";
 import { RunMedia } from "./run-media";
 import type { GenerateRequest, Run, RunImage } from "./types";
 
-const TIME = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const TIME_FORMAT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
 
 // Rejections the visitor can simply retry. The others (budget, IP limit) can't succeed today.
 const RETRYABLE = new Set(["FAL_DISABLED", "NETWORK", "UNKNOWN", "INTERNAL", "INVALID_INPUT"]);
@@ -35,6 +36,7 @@ export function ChatThread({ runs, onLoad, onRetry, onFavourite, onSignUp, retry
   const lightboxImage = lightboxRun?.images.find((image) => image.url === lightbox?.url);
   const reduced = usePrefersReducedMotion();
   const listRef = useRef<HTMLOListElement>(null);
+  const t = useT();
   useStickToBottom(listRef);
 
   // runs is newest-first; a chat reads oldest-first with the newest right above the composer.
@@ -42,7 +44,7 @@ export function ChatThread({ runs, onLoad, onRetry, onFavourite, onSignUp, retry
 
   return (
     <>
-      <ol ref={listRef} role="log" aria-label="Conversation" className="mt-auto flex flex-col gap-10 pt-2">
+      <ol ref={listRef} role="log" aria-label={t("thread.label")} className="mt-auto flex flex-col gap-10 pt-2">
         {ordered.map((run, i) => (
           <li key={run.id} className="flex flex-col gap-5">
             <UserBubble run={run} onReuse={() => onLoad(run.request)} />
@@ -75,6 +77,7 @@ export function ChatThread({ runs, onLoad, onRetry, onFavourite, onSignUp, retry
 
 function UserBubble({ run, onReuse }: { run: Run; onReuse: () => void }) {
   const { prompt, model, aspect, batch } = run.request;
+  const { locale, t } = useLocale();
 
   return (
     <div className="group flex flex-col items-end gap-1.5 motion-safe:animate-rise-in">
@@ -86,19 +89,19 @@ function UserBubble({ run, onReuse }: { run: Run; onReuse: () => void }) {
             {MODELS[model].label}
           </Tag>
           <Tag>{aspect}</Tag>
-          {batch > 1 && <Tag>{batch} images</Tag>}
+          {batch > 1 && <Tag>{t("thread.images", { n: batch })}</Tag>}
         </div>
       </div>
       <div className="flex items-center gap-3 pr-1 text-xs text-text-3 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
-        <time dateTime={new Date(run.startedAt).toISOString()}>{TIME.format(run.startedAt)}</time>
+        <time dateTime={new Date(run.startedAt).toISOString()}>{new Intl.DateTimeFormat(locale, TIME_FORMAT).format(run.startedAt)}</time>
         <button
           type="button"
           onClick={onReuse}
-          title="Load this prompt and its settings into the composer"
+          title={t("thread.reuseTitle")}
           className="flex items-center gap-1 rounded-sm font-medium text-text-2 transition-colors duration-150 hover:text-text-1"
         >
           <ReuseIcon className="size-3.5" />
-          Reuse
+          {t("thread.reuse")}
         </button>
       </div>
     </div>
@@ -138,6 +141,7 @@ function AssistantTurn({
 }) {
   const router = useRouter();
   const { account } = useApp();
+  const { locale, t } = useLocale();
   // A signed-in visitor has no signup bonus left to offer; running out points them to plans instead.
   const member = account?.status === "member";
   const [introDone, setIntroDone] = useState(!animate);
@@ -157,7 +161,7 @@ function AssistantTurn({
       </span>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3 pt-1">
-        <StreamedText text={introLine(run)} animate={animate} onDone={() => setIntroDone(true)} />
+        <StreamedText text={introLine(run, locale, t)} animate={animate} onDone={() => setIntroDone(true)} />
 
         {introDone && !rejected && (
           <RunMedia
@@ -171,7 +175,7 @@ function AssistantTurn({
 
         {introDone && settled && (
           <StreamedText
-            text={rejected ? rejectionLine(run, member) : outroLine(run)}
+            text={rejected ? rejectionLine(run, t, member) : outroLine(run, locale, t)}
             animate={animate}
             onDone={() => setOutroDone(true)}
           />
@@ -180,7 +184,7 @@ function AssistantTurn({
         {latest && outroDone && settled && (
           <div className="flex flex-wrap gap-2 motion-safe:animate-rise-in motion-reduce:animate-fade-in">
             {run.status === "done" &&
-              followUps(run.request).map((f) => (
+              followUps(run.request, t).map((f) => (
                 <Chip key={f.label} onClick={() => onLoad(f.request)}>
                   {f.label}
                   <span className="flex items-center gap-1 text-xs text-text-2 tabular-nums">
@@ -191,13 +195,13 @@ function AssistantTurn({
               ))}
             {rejected && code === "INSUFFICIENT_CREDITS" &&
               (member ? (
-                <Chip onClick={() => router.push("/pricing")}>See plans</Chip>
+                <Chip onClick={() => router.push("/pricing")}>{t("thread.seePlans")}</Chip>
               ) : (
-                <Chip onClick={onSignUp}>Sign up for {UPGRADE_BONUS} credits</Chip>
+                <Chip onClick={onSignUp}>{t("thread.signUpFor", { n: UPGRADE_BONUS })}</Chip>
               ))}
             {rejected && RETRYABLE.has(code) && (
               <Chip onClick={onRetry} disabled={retryDisabled}>
-                Try again
+                {t("thread.tryAgain")}
               </Chip>
             )}
           </div>

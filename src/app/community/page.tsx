@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CommunityGrid } from "./community-grid";
 import { loadCommunityFeed, type CommunityItem } from "./feed";
 
-export const metadata: Metadata = { title: "Community — Higgsfield clone" };
+export const metadata: Metadata = { title: "Community — Higgsfield AI Clone" };
 
 // Featuring is a hand edit in the SQL editor, so a minute of staleness is fine and the page stays on the CDN.
 export const revalidate = 60;

@@ -8,7 +8,7 @@ import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
 import { Plans } from "./plans";
 import { SignUpButton } from "./sign-up-button";
 
-export const metadata: Metadata = { title: "Pricing — Higgsfield clone" };
+export const metadata: Metadata = { title: "Pricing — Higgsfield AI Clone" };
 
 const schnell = MODELS["flux-schnell"];
 const dev = MODELS["flux-dev"];
@@ -44,7 +44,7 @@ const FAQ = [
 export default function PricingPage() {
   return (
     <>
-      <main className="mx-auto flex w-full max-w-288 flex-1 flex-col px-4 pt-6 pb-10">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-6 pb-10">
         <section className="relative overflow-hidden rounded-2xl border border-white/8 bg-bg-1 bg-promo px-6 py-7 sm:px-8 sm:py-9">
           <span className="inline-flex h-5 items-center gap-1 rounded-xs bg-brand-pink px-1.5 text-[10px] leading-3 font-bold tracking-[0.02em] text-accent-ink uppercase italic">
             <TagIcon className="size-2.5" />

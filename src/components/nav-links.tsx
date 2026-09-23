@@ -4,8 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
 
+import type { MessageKey, T } from "@/lib/i18n";
+
+import { useT } from "./locale-provider";
+
 export type NavLink = {
-  label: string;
+  /** Translated label; product names use `brand` instead and stay as written in every language. */
+  labelKey?: MessageKey;
+  brand?: string;
   /** Real route. Items without one aren't built: they render as plain text with a Soon badge, not a link. */
   route?: string;
   /** Draws the thin divider before this link, splitting core tools from the wider product line. */
@@ -14,28 +20,35 @@ export type NavLink = {
 
 // A link that bounced back to Explore read as broken; a Soon badge reads as scope.
 export const LINKS: NavLink[] = [
-  { label: "Explore", route: "/" },
-  { label: "Image", route: "/image" },
-  { label: "Assets", route: "/assets" },
-  { label: "Community", route: "/community" },
-  { label: "Video" },
-  { label: "Audio" },
-  { label: "MCP" },
-  { label: "API" },
-  { label: "ChatGPT Plugin", groupStart: true },
-  { label: "Genjutsu" },
-  { label: "Effects" },
-  { label: "Cinema Studio" },
-  { label: "Contests" },
-  { label: "Marketing Studio" },
-  { label: "Supercomputer" },
+  { labelKey: "nav.explore", route: "/" },
+  { labelKey: "nav.image", route: "/image" },
+  { labelKey: "nav.assets", route: "/assets" },
+  { labelKey: "nav.community", route: "/community" },
+  { labelKey: "nav.video" },
+  { labelKey: "nav.audio" },
+  { brand: "MCP" },
+  { brand: "API" },
+  { brand: "ChatGPT Plugin", groupStart: true },
+  { brand: "Genjutsu" },
+  { labelKey: "nav.effects" },
+  { labelKey: "nav.cinemaStudio" },
+  { labelKey: "nav.contests" },
+  { labelKey: "nav.marketingStudio" },
+  { brand: "Supercomputer" },
 ];
 
-export const SOON_BADGE = (
-  <span className="flex h-4 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold text-accent-text">
-    Soon
-  </span>
-);
+export function navLabel(link: NavLink, t: T): string {
+  return link.labelKey ? t(link.labelKey) : (link.brand ?? "");
+}
+
+export function SoonBadge() {
+  const t = useT();
+  return (
+    <span className="flex h-4 shrink-0 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold whitespace-nowrap text-accent-text">
+      {t("nav.soon")}
+    </span>
+  );
+}
 
 export function isActive(route: string | undefined, pathname: string): boolean {
   if (!route) return false;
@@ -44,6 +57,7 @@ export function isActive(route: string | undefined, pathname: string): boolean {
 
 export function NavLinks() {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     // Scrolls sideways when the window is too narrow for every link; the right edge fades instead of clipping.
@@ -54,7 +68,7 @@ export function NavLinks() {
           const active = isActive(route, pathname);
 
           return (
-            <Fragment key={link.label}>
+            <Fragment key={link.labelKey ?? link.brand}>
               {link.groupStart && <li aria-hidden className="h-4 w-px bg-border-3" />}
               <li>
                 {route ? (
@@ -65,15 +79,15 @@ export function NavLinks() {
                       active ? "text-accent-text" : "text-text-2 hover:text-text-1"
                     }`}
                   >
-                    {link.label}
+                    {navLabel(link, t)}
                   </Link>
                 ) : (
                   <span
                     aria-disabled
                     className="flex cursor-not-allowed items-center gap-1.5 text-sm font-medium whitespace-nowrap text-text-disabled"
                   >
-                    {link.label}
-                    {SOON_BADGE}
+                    {navLabel(link, t)}
+                    <SoonBadge />
                   </span>
                 )}
               </li>

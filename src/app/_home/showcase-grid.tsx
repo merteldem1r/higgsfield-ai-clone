@@ -3,12 +3,14 @@
 import Image from "next/image";
 
 import { ReuseIcon } from "@/components/icons";
+import { useT } from "@/components/locale-provider";
 
 import { useHomeComposer } from "./home-composer";
 import { Reveal } from "./reveal";
 import { SHOWCASE } from "./showcase";
 
 export function ShowcaseGrid() {
+  const t = useT();
   const { loadPrompt } = useHomeComposer();
 
   return (
@@ -35,7 +37,7 @@ export function ShowcaseGrid() {
                 className="pointer-events-auto flex h-8 items-center gap-1.5 rounded-md bg-white/15 px-3 text-xs font-semibold text-white backdrop-blur-md transition-colors duration-150 hover:bg-white/25"
               >
                 <ReuseIcon className="size-3.5" />
-                Recreate
+                {t("home.recreate")}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "reac
 
 import { useApp } from "@/components/app-provider";
 import { AspectIcon, MinusIcon, PlusIcon, SparkleIcon, SpinnerIcon } from "@/components/icons";
+import { useLocale } from "@/components/locale-provider";
 import {
   ASPECTS,
   BATCH_MAX,
@@ -38,17 +39,7 @@ const GLYPH: Record<AspectId, string> = {
   "16:9": "h-2.5 w-4",
 };
 
-const MODEL_OPTIONS: ChipOption<ModelId>[] = (Object.keys(MODELS) as ModelId[]).map((id) => ({
-  value: id,
-  label: MODELS[id].label,
-  description: MODELS[id].description,
-  meta: (
-    <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-text-2 tabular-nums">
-      <SparkleIcon className="size-3 text-accent" />
-      {MODELS[id].credits}
-    </span>
-  ),
-}));
+const MODEL_IDS = Object.keys(MODELS) as ModelId[];
 
 const ASPECT_OPTIONS: ChipOption<AspectId>[] = (Object.keys(ASPECTS) as AspectId[]).map((id) => ({
   value: id,
@@ -72,6 +63,19 @@ type Props = {
 
 export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }: Props) {
   const { credits, openAuthModal, showToast } = useApp();
+  const { locale, t } = useLocale();
+  // Model names stay as written; only the one-line description is translated.
+  const modelOptions: ChipOption<ModelId>[] = MODEL_IDS.map((id) => ({
+    value: id,
+    label: MODELS[id].label,
+    description: t(`model.${id}.description`),
+    meta: (
+      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-text-2 tabular-nums">
+        <SparkleIcon className="size-3 text-accent" />
+        {MODELS[id].credits}
+      </span>
+    ),
+  }));
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState<ModelId>(DEFAULT_MODEL);
   const [aspect, setAspect] = useState<AspectId>(DEFAULT_ASPECT);
@@ -139,14 +143,14 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
           <button
             type="button"
             disabled={inFlight}
-            aria-label="Add reference image"
-            onClick={() => showToast({ tone: "neutral", text: "Reference images are coming soon." })}
+            aria-label={t("composer.addReference")}
+            onClick={() => showToast({ tone: "neutral", text: t("composer.referenceSoon") })}
             className="flex size-8 shrink-0 items-center justify-center rounded-md bg-bg-3 text-text-1 transition-colors duration-150 hover:bg-bg-5 disabled:pointer-events-none disabled:opacity-50"
           >
             <PlusIcon className="size-4" />
           </button>
           <label htmlFor="prompt" className="sr-only">
-            Prompt
+            {t("composer.prompt")}
           </label>
           <textarea
             id="prompt"
@@ -167,14 +171,14 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
               if (after > MAX_PROMPT_LENGTH) {
                 showToast({
                   tone: "neutral",
-                  text: `Prompt trimmed to ${MAX_PROMPT_LENGTH.toLocaleString("en-US")} characters.`,
+                  text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH.toLocaleString(locale) }),
                 });
               }
             }}
             rows={1}
             maxLength={MAX_PROMPT_LENGTH}
             aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
-            placeholder="Describe the scene you imagine"
+            placeholder={t("composer.placeholder")}
             className="field-sizing-content max-h-27.5 min-h-8 flex-1 resize-none bg-transparent py-1.25 text-[15px] leading-5.5 text-text-1 outline-none placeholder:text-text-placeholder"
           />
           {prompt.length >= COUNTER_FROM && (
@@ -191,15 +195,15 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
 
         <div className="-mx-3 flex gap-2 overflow-x-auto overscroll-x-contain pl-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:pl-0">
           <ChipMenu
-            label="Model"
+            label={t("composer.model")}
             icon={<SparkleIcon gradient />}
-            options={MODEL_OPTIONS}
+            options={modelOptions}
             value={model}
             onChange={setModel}
             disabled={inFlight}
           />
           <ChipMenu
-            label="Aspect ratio"
+            label={t("composer.aspect")}
             icon={<AspectIcon />}
             options={ASPECT_OPTIONS}
             value={aspect}
@@ -208,12 +212,12 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
           />
           <div
             role="group"
-            aria-label="Number of images"
+            aria-label={t("composer.count")}
             className={`${CHIP_CLASS} gap-1 px-1.5 hover:bg-chip ${inFlight ? "pointer-events-none opacity-50" : ""}`}
           >
             <button
               type="button"
-              aria-label="Fewer images"
+              aria-label={t("composer.fewer")}
               disabled={inFlight || batch <= BATCH_MIN}
               onClick={() => setBatch((b) => Math.max(BATCH_MIN, b - 1))}
               className="flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent"
@@ -225,7 +229,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
             </span>
             <button
               type="button"
-              aria-label="More images"
+              aria-label={t("composer.more")}
               disabled={inFlight || batch >= BATCH_MAX}
               onClick={() => setBatch((b) => Math.min(BATCH_MAX, b + 1))}
               className="flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent"
@@ -250,18 +254,18 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
         {inFlight ? (
           <>
             <SpinnerIcon className="size-4 motion-safe:animate-spin" />
-            Generating…
+            {t("composer.generating")}
           </>
         ) : needsCredits ? (
-          "Get more credits"
+          t("composer.getCredits")
         ) : (
           <>
-            Generate
+            {t("composer.generate")}
             <SparkleIcon className="size-3.5" />
             <span className="tabular-nums">
               <s aria-hidden className="font-semibold opacity-50">{cost.listCredits}</s>{" "}
               <span className="font-bold">{cost.credits}</span>
-              <span className="sr-only"> credits</span>
+              <span className="sr-only">{t("composer.creditsSr")}</span>
             </span>
           </>
         )}

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useApp } from "./app-provider";
 import { SparkleIcon } from "./icons";
+import { useT } from "./locale-provider";
 
 const TICK_MS = 300;
 
@@ -37,6 +38,7 @@ export function CreditsPill() {
   const router = useRouter();
   const { account, credits, openAuthModal } = useApp();
   const shown = useTickingNumber(credits);
+  const t = useT();
   const empty = credits === 0;
 
   return (
@@ -45,7 +47,7 @@ export function CreditsPill() {
       onClick={() =>
         account?.status === "member" ? router.push("/pricing") : openAuthModal(empty ? "out-of-credits" : "signup")
       }
-      aria-label={credits === null ? "Credits" : `${credits} credits`}
+      aria-label={credits === null ? t("credits.label") : t("credits.count", { n: credits })}
       className={`flex h-8 items-center gap-1.5 rounded-full border border-border-3 bg-bg-3 px-3 transition-colors duration-150 hover:bg-bg-5 ${
         empty ? "motion-safe:animate-danger-pulse" : ""
       }`}

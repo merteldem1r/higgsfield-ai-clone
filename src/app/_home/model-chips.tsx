@@ -2,13 +2,15 @@ import Link from "next/link";
 
 import { SparkleIcon } from "@/components/icons";
 import { MODELS, type ModelId } from "@/lib/credits";
+import { getT } from "@/lib/i18n/server";
 
 const PILL = "flex h-9 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-sm font-medium";
 
-export function ModelChips() {
+export async function ModelChips() {
+  const t = await getT();
   return (
     <ul
-      aria-label="Models"
+      aria-label={t("home.models")}
       className="-mx-4 flex gap-2 self-stretch overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:justify-center sm:px-0"
     >
       {(Object.keys(MODELS) as ModelId[]).map((id) => (
@@ -19,15 +21,15 @@ export function ModelChips() {
           >
             <SparkleIcon gradient className="size-3.5" />
             {MODELS[id].label}
-            <span className="text-text-2 tabular-nums">{MODELS[id].credits} credits</span>
+            <span className="text-text-2 tabular-nums">{t("credits.count", { n: MODELS[id].credits })}</span>
           </Link>
         </li>
       ))}
       <li className="shrink-0">
         <span aria-disabled="true" className={`${PILL} cursor-not-allowed border-border-1 text-text-3`}>
-          Video
+          {t("nav.video")}
           <span className="flex h-4 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold text-accent-text">
-            Soon
+            {t("nav.soon")}
           </span>
         </span>
       </li>

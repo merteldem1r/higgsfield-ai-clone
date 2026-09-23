@@ -5,56 +5,57 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { UPGRADE_BONUS } from "@/lib/credits";
+import { isMessageKey, type MessageKey, type T } from "@/lib/i18n";
 import { logInWithEmail, signUpWithEmail } from "@/lib/supabase/session";
 
 import { useApp, type AuthModalVariant } from "./app-provider";
 import { AlertIcon, GiftIcon, GoogleIcon, LogoMark, SparkleIcon, SpinnerIcon, XIcon } from "./icons";
+import { useT } from "./locale-provider";
 
 // Email + password is real. Google stays visible but disabled until it ships (docs/PLAN.md P2).
 // Apple and Microsoft are left out on purpose; PLAN skips them, so showing them would promise something that never ships.
 
-const COPY: Record<AuthModalVariant, { title: string; subtitle: string }> = {
-  login: { title: "Welcome back", subtitle: "Log in to see your images on any device." },
-  signup: {
-    title: "Create your account",
-    subtitle: `Add an email and password and get ${UPGRADE_BONUS} credits. Everything you've made comes with you.`,
-  },
-  "out-of-credits": {
-    title: "You're out of free credits",
-    subtitle: `Sign up to get ${UPGRADE_BONUS} more. Your images stay in your gallery.`,
-  },
+const COPY: Record<AuthModalVariant, { title: MessageKey; subtitle: MessageKey }> = {
+  login: { title: "authModal.login.title", subtitle: "authModal.login.subtitle" },
+  signup: { title: "authModal.signup.title", subtitle: "authModal.signup.subtitle" },
+  "out-of-credits": { title: "authModal.out.title", subtitle: "authModal.out.subtitle" },
 };
 
 // Supabase's default minimum; checking it here saves a round trip for the common mistake.
 const MIN_PASSWORD = 6;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SLIDES = [
+// Model names stay as written in every language; the other two labels are translated.
+const SLIDES: { label: string | MessageKey; title: MessageKey; text: MessageKey; src: string }[] = [
   {
     label: "Flux Dev",
-    title: "Richer light",
-    text: "Finer detail and truer shadows, 6 credits an image.",
+    title: "authModal.slide.dev.title",
+    text: "authModal.slide.dev.text",
     src: "/showcase/g07.jpg",
   },
   {
     label: "Flux Schnell",
-    title: "Drafts in seconds",
-    text: "Two credits and about two seconds per image.",
+    title: "authModal.slide.schnell.title",
+    text: "authModal.slide.schnell.text",
     src: "/presets/neon-noir.jpg",
   },
   {
-    label: "Presets",
-    title: "Start from a style",
-    text: "Eight looks, one click, your own subject.",
+    label: "authModal.slide.presets.label",
+    title: "authModal.slide.presets.title",
+    text: "authModal.slide.presets.text",
     src: "/presets/pastel-dream.jpg",
   },
   {
-    label: "Batch",
-    title: "Four takes at once",
-    text: "One prompt, four images. Keep the best.",
+    label: "authModal.slide.batch.label",
+    title: "authModal.slide.batch.title",
+    text: "authModal.slide.batch.text",
     src: "/showcase/g03.jpg",
   },
 ];
+
+function slideLabel(label: string, t: T): string {
+  return isMessageKey(label) ? t(label) : label;
+}
 
 export function AuthModal() {
   const { authModal, closeAuthModal } = useApp();
@@ -90,6 +91,7 @@ export function AuthModal() {
 
 function AuthCarousel() {
   const [index, setIndex] = useState(0);
+  const t = useT();
   const slide = SLIDES[index];
 
   return (
@@ -108,10 +110,10 @@ function AuthCarousel() {
         <div key={index} className="motion-safe:animate-rise-in motion-reduce:animate-fade-in">
           <span className="inline-flex h-6 items-center gap-1.5 rounded-sm bg-bg-5/80 px-2 text-[11px] font-semibold backdrop-blur-sm">
             <SparkleIcon gradient className="size-3" />
-            {slide.label}
+            {slideLabel(slide.label, t)}
           </span>
-          <p className="mt-3 font-display text-[40px] leading-10 text-white uppercase">{slide.title}</p>
-          <p className="mt-2 text-sm text-white/70">{slide.text}</p>
+          <p className="mt-3 font-display text-[40px] leading-10 text-white uppercase">{t(slide.title)}</p>
+          <p className="mt-2 text-sm text-white/70">{t(slide.text)}</p>
         </div>
 
         <div className="mt-6 flex gap-2">
@@ -120,7 +122,7 @@ function AuthCarousel() {
               key={s.label}
               type="button"
               onClick={() => setIndex(i)}
-              aria-label={`Show ${s.label}`}
+              aria-label={t("authModal.showSlide", { label: slideLabel(s.label, t) })}
               aria-current={i === index}
               className="group flex flex-1 flex-col gap-2 text-left"
             >
@@ -143,7 +145,7 @@ function AuthCarousel() {
                   i === index ? "text-white" : "text-text-2 group-hover:text-text-1"
                 }`}
               >
-                {s.label}
+                {slideLabel(s.label, t)}
               </span>
             </button>
           ))}
@@ -173,21 +175,22 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
   // Set after a successful sign-up: the panel swaps the form for the welcome view.
   const [welcome, setWelcome] = useState<{ granted: boolean; credits: number | null } | null>(null);
   const ids = useId();
+  const t = useT();
   const isLogin = tab === "login";
   // The out-of-credits wording only fits the signup tab it opened on.
   const copy = COPY[isLogin ? "login" : mode === "login" ? "signup" : mode];
 
   const emailError = !email.trim()
-    ? "Enter your email."
+    ? t("authModal.err.emailEmpty")
     : !EMAIL_SHAPE.test(email.trim())
-      ? "That doesn't look like an email address."
+      ? t("authModal.err.emailShape")
       : null;
   const passwordError = !password
-    ? "Enter a password."
+    ? t("authModal.err.passwordEmpty")
     : !isLogin && password.length < MIN_PASSWORD
-      ? `Use at least ${MIN_PASSWORD} characters.`
+      ? t("authModal.err.passwordShort", { n: MIN_PASSWORD })
       : null;
-  const termsError = !isLogin && !agreed ? "Tick the box to accept the terms." : null;
+  const termsError = !isLogin && !agreed ? t("authModal.err.terms") : null;
 
   function switchTab(next: Tab) {
     setTab(next);
@@ -226,7 +229,7 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
       setWelcome({ granted: outcome.granted, credits: outcome.credits });
     } catch (err) {
       console.error("Auth request failed", err);
-      setFormError({ kind: "message", text: "Couldn't reach the server. Check your connection and try again." });
+      setFormError({ kind: "message", text: t("authModal.err.network") });
     } finally {
       setPending(false);
     }
@@ -242,7 +245,7 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
       <button
         type="button"
         onClick={closeAuthModal}
-        aria-label="Close"
+        aria-label={t("authModal.close")}
         className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-bg-3 text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1"
       >
         <XIcon className="size-4" />
@@ -255,22 +258,22 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
           <div className="flex flex-col items-center text-center">
             <LogoMark className="size-10" />
             <h2 id="auth-modal-title" className="mt-5 text-title font-semibold">
-              {copy.title}
+              {t(copy.title)}
             </h2>
-            <p className="mt-2 text-sm text-text-2">{copy.subtitle}</p>
+            <p className="mt-2 text-sm text-text-2">{t(copy.subtitle, { n: UPGRADE_BONUS })}</p>
           </div>
 
-          <div role="tablist" aria-label="Account" className="mt-7 flex gap-1 rounded-lg border border-border-3 bg-bg-1 p-1">
+          <div role="tablist" aria-label={t("account.label")} className="mt-7 flex gap-1 rounded-lg border border-border-3 bg-bg-1 p-1">
             <button type="button" role="tab" aria-selected={!isLogin} onClick={() => switchTab("signup")} className={tabClass(!isLogin)}>
-              Sign up
+              {t("authModal.tabSignup")}
             </button>
             <button type="button" role="tab" aria-selected={isLogin} onClick={() => switchTab("login")} className={tabClass(isLogin)}>
-              Log in
+              {t("authModal.tabLogin")}
             </button>
           </div>
 
           <form noValidate onSubmit={submit} className="mt-5 flex flex-col gap-3" aria-busy={pending}>
-            <Field id={`${ids}-email`} label="Email" error={attempted ? emailError : null}>
+            <Field id={`${ids}-email`} label={t("authModal.email")} error={attempted ? emailError : null}>
               <input
                 id={`${ids}-email`}
                 type="email"
@@ -287,9 +290,9 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
             </Field>
             <Field
               id={`${ids}-password`}
-              label="Password"
+              label={t("authModal.password")}
               error={attempted ? passwordError : null}
-              hint={isLogin ? undefined : `At least ${MIN_PASSWORD} characters.`}
+              hint={isLogin ? undefined : t("authModal.passwordHint", { n: MIN_PASSWORD })}
             >
               <input
                 id={`${ids}-password`}
@@ -314,15 +317,14 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
                   aria-invalid={attempted && termsError !== null}
                   className="mt-px size-4 shrink-0 cursor-pointer rounded-sm accent-accent aria-invalid:outline-2 aria-invalid:outline-offset-2 aria-invalid:outline-danger"
                 />
-                I agree to the Terms of Use, acknowledge the Privacy Policy, and confirm I&apos;m at least 18 years old.
+                {t("authModal.terms")}
               </label>
             )}
 
             {/* Logging in swaps sessions; a guest's images stay with the guest user, so say it before they click. */}
             {isLogin && account?.status === "anonymous" && (
               <p className="rounded-lg bg-bg-2 px-3 py-2.5 text-xs leading-4.5 text-text-2">
-                You&apos;re using a guest session. Images you made as a guest in this browser won&apos;t carry over when
-                you log in to another account.
+                {t("authModal.guestNote")}
               </p>
             )}
 
@@ -331,17 +333,14 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
                 <div className="flex flex-col gap-2 rounded-lg border border-danger/30 bg-danger/8 px-3 py-2.5 text-xs leading-4.5 text-text-1">
                   <p className="flex items-start gap-2">
                     <AlertIcon className="mt-px size-4 shrink-0 text-danger" />
-                    <span>
-                      That email already has an account. Log in instead. Images you made as a guest in this browser
-                      won&apos;t carry over to it.
-                    </span>
+                    <span>{t("authModal.exists")}</span>
                   </p>
                   <button
                     type="button"
                     onClick={() => switchTab("login")}
                     className="self-start pl-6 font-semibold text-accent-text transition-colors duration-150 hover:text-accent-hover"
                   >
-                    Log in instead
+                    {t("authModal.loginInstead")}
                   </button>
                 </div>
               )}
@@ -362,14 +361,14 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
               {pending ? (
                 <>
                   <SpinnerIcon className="size-4 motion-safe:animate-spin" />
-                  {isLogin ? "Logging in…" : "Creating account…"}
+                  {isLogin ? t("authModal.loggingIn") : t("authModal.creating")}
                 </>
               ) : isLogin ? (
-                "Log in"
+                t("authModal.submitLogin")
               ) : (
                 <>
                   <GiftIcon className="size-4" />
-                  Sign up &amp; get {UPGRADE_BONUS} credits
+                  {t("authModal.submitSignup", { n: UPGRADE_BONUS })}
                 </>
               )}
             </button>
@@ -377,7 +376,7 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
 
           <div className="mt-5 flex items-center gap-3 text-xs text-text-3">
             <span className="h-px flex-1 bg-border-1" />
-            OR
+            {t("authModal.or")}
             <span className="h-px flex-1 bg-border-1" />
           </div>
           <button
@@ -387,13 +386,13 @@ function AuthPanel({ mode }: { mode: AuthModalVariant }) {
             className="mt-5 flex h-12 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-lg border border-border-3 bg-bg-1 text-sm font-semibold text-text-disabled"
           >
             <GoogleIcon className="size-4.5 opacity-50" />
-            Continue with Google
+            {t("authModal.google")}
             <span className="flex h-4 items-center rounded-xs bg-accent-badge-bg px-1 text-[10px] leading-3 font-semibold text-accent-text">
-              Soon
+              {t("nav.soon")}
             </span>
           </button>
           <p role="status" className="mt-2 min-h-4.5 text-center text-xs text-text-2">
-            {providerNote && "Google sign-in is coming soon. Use email for now."}
+            {providerNote && t("authModal.googleSoon")}
           </p>
         </div>
       )}
@@ -407,6 +406,7 @@ const STAGGER = "motion-safe:animate-rise-in motion-reduce:animate-fade-in [anim
 function Welcome({ email, granted, credits }: { email: string; granted: boolean; credits: number | null }) {
   const router = useRouter();
   const { closeAuthModal } = useApp();
+  const t = useT();
 
   function start() {
     closeAuthModal();
@@ -432,22 +432,21 @@ function Welcome({ email, granted, credits }: { email: string; granted: boolean;
             <span className="text-brand-gradient">+{UPGRADE_BONUS}</span>
           </p>
           <p className={`text-sm font-semibold tracking-[0.08em] text-text-2 uppercase ${STAGGER} [animation-delay:80ms]`}>
-            bonus credits
+            {t("authModal.bonus")}
           </p>
           <h2 id="auth-modal-title" className={`mt-6 text-title font-semibold ${STAGGER} [animation-delay:180ms]`}>
-            You&apos;re in!
+            {t("authModal.youreIn")}
           </h2>
         </>
       ) : (
         <h2 id="auth-modal-title" className={`mt-6 text-title font-semibold ${STAGGER} [animation-delay:80ms]`}>
-          You&apos;re signed up
+          {t("authModal.signedUp")}
         </h2>
       )}
 
       <p className={`mt-2 text-sm text-text-2 ${STAGGER} [animation-delay:240ms]`}>
-        Your account is set up as <span className="break-all text-text-1">{email}</span>. Everything you made as a
-        guest is saved to it.
-        {!granted && " Your bonus credits couldn't be added just now; they'll land the next time you log in."}
+        {t("authModal.setUpAs")} <span className="break-all text-text-1">{email}</span>. {t("authModal.guestSaved")}
+        {!granted && t("authModal.bonusLater")}
       </p>
 
       {credits !== null && (
@@ -455,8 +454,8 @@ function Welcome({ email, granted, credits }: { email: string; granted: boolean;
           className={`mt-5 flex h-9 items-center gap-2 rounded-full border border-border-3 bg-bg-3 px-4 text-sm ${STAGGER} [animation-delay:300ms]`}
         >
           <SparkleIcon gradient className="size-3.5" />
-          <span className="text-text-2">Balance</span>
-          <span className="font-semibold tabular-nums">{credits} credits</span>
+          <span className="text-text-2">{t("authModal.balance")}</span>
+          <span className="font-semibold tabular-nums">{t("credits.count", { n: credits })}</span>
         </p>
       )}
 
@@ -466,14 +465,14 @@ function Welcome({ email, granted, credits }: { email: string; granted: boolean;
         className={`mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient text-[15px] font-semibold text-accent-ink inset-shadow-lip transition-[filter,translate] duration-150 hover:brightness-110 active:translate-y-px active:inset-shadow-lip-pressed ${STAGGER} [animation-delay:360ms]`}
       >
         <SparkleIcon className="size-4" />
-        Start creating
+        {t("authModal.start")}
       </button>
       <button
         type="button"
         onClick={closeAuthModal}
         className={`mt-3 text-sm font-medium text-text-2 transition-colors duration-150 hover:text-text-1 ${STAGGER} [animation-delay:400ms]`}
       >
-        Back to where I was
+        {t("authModal.back")}
       </button>
     </div>
   );
