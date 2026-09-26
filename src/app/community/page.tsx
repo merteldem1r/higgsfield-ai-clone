@@ -13,7 +13,7 @@ import { loadCommunityFeed, type CommunityItem } from "./feed";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
-  return { title: `${t("nav.community")} — Higgsfield AI Clone` };
+  return { title: t("nav.community") };
 }
 
 // Featuring is a hand edit in the SQL editor, so a minute of staleness is fine and the page stays on the CDN.

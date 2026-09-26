@@ -1,97 +1,88 @@
 # DESIGN — visual spec
 
-Surface, border and text colors are pixel-sampled from `docs/recon/screenshots/`. **The accent palette is ours:** it's sampled from our logo (`src/app/logo.png`) and replaces Higgsfield's lime. The rule is that the brand gradient goes on the large "money" surfaces (Generate, Sign up, CTAs, the hero's second line) and solid violet `--accent` goes on small UI (active nav, focus rings, checks, links, open-chip borders), where a gradient would turn muddy. Sizes are measured in CSS px: the desktop captures are @2x of a 1710px-wide viewport and the mobile ones are @2x of about 394px. Radii and motion timings are estimates read off the screenshots. Anything marked *(ours)* doesn't appear in the recon; it's our own design in the same style.
+**Darkroom.** A studio, not a storefront. Every page is one column; the composer sits at the top of it and the newest work directly beneath, so the prompt and the picture it made are always on screen together. Images are the only saturated colour. The chrome is a warm near-black whose surfaces are separated by spacing and one tone step, not by boxes. The logo gradient is spent in exactly two places: the Generate action, and whatever is live right now (the generating tile, the caret, the credits while they change). No uppercase, no gradient words, no badges. The voice is the assistant's voice already in the thread, extended to the whole UI: plain verbs, real numbers, nothing announced that doesn't exist.
+
+**Redesign status.** §1 Tokens and §2 Typography describe the new system (checkpoint 1). §3 Components and §4 Motion still describe the previous UI and are rewritten as each surface is rebuilt; where they conflict with §1–2, §1–2 win.
 
 ## 1. Tokens
 
 ```css
 :root {
-  /* surfaces, darkest → lightest */
-  --bg-0: #0f1113;        /* page, nav */
-  --bg-1: #131517;        /* sidebars, modal, panels */
-  --bg-2: #1c1e20;        /* cards inside panels, composer */
-  --bg-3: #1f2123;        /* setting cells, empty placeholders, icon buttons */
-  --bg-4: #23262b;        /* feature tiles on Explore */
-  --bg-5: #2e3135;        /* chips on tiles, hover on bg-3/4 */
-  --chip: #222222;        /* composer chips (neutral, not blue-tinted) */
-  --tabbar: #0b0c0e;      /* mobile bottom bar */
-  --overlay: rgb(0 0 0 / .8);   /* modal backdrop (#0f1113 → #030304) */
+  /* surfaces: warm near-black, one tone step apart */
+  --bg-0: #121110;        /* page */
+  --bg-1: #1a1918;        /* panels: dialog, menus, footer note */
+  --bg-2: #211f1d;        /* raised: inputs, chips, hover on a panel */
+  --bg-3: #2a2826;        /* hover on raised */
+  --overlay: rgb(0 0 0 / .7);   /* dialog backdrop */
 
-  /* borders */
-  --border-1: #1f2123;    /* dividers */
-  --border-2: #26292b;    /* panel edges */
-  --border-3: #2b2c2e;    /* buttons, inputs */
+  /* hairlines */
+  --line-1: #221f1d;      /* on the page (header, footer, dividers) */
+  --line-2: #302d2a;      /* on panels; input borders */
 
-  /* text */
-  --text-1: #ffffff;
-  --text-2: #898a8b;      /* subtitles, labels, inactive tabs */
-  --text-3: #737475;      /* "OR", meta */
-  --text-placeholder: #a0a1a2;
-  --text-disabled: #57595a;
+  /* text: warm white, then two greys */
+  --text-1: #f4f1ec;
+  --text-2: #8c877f;      /* labels, secondary copy; 5.5:1 on bg-0 */
+  --text-3: #6b665f;      /* meta, timestamps, copyright */
+  --text-placeholder: #7a756d;
+  --text-disabled: #55514b;
 
-  /* brand: sampled from the logo, left → right */
+  /* brand: sampled from the logo, left → right. Generate, and whatever is live. */
   --brand-sky: #69c5fa;
   --brand-violet: #8472fb;
   --brand-pink: #ed77cc;
   --brand-peach: #fbca74;
   --brand-gradient: linear-gradient(100deg, sky, violet 38%, pink 68%, peach);
-  --brand-gradient-muted: same stops mixed 78% with --bg-2;   /* disabled Generate; text at 70% */
+  --brand-gradient-muted: same stops mixed 78% with --bg-2;   /* disabled Generate */
 
-  /* accent: solid, for small UI */
-  --accent: #8472fb;              /* rings, borders, icon fills */
-  --accent-text: #a99cfc;         /* 12–14px text: links, active nav, checks */
-  --accent-hover: #c3b9fd;
-  --accent-ink: #0f1113;          /* text on the gradient / accent fills (≥5:1 on every stop) */
-  --accent-tint: #1e1e2e;         /* "business email" button bg (accent 10% over bg-1) */
-  --accent-tint-2: #242339;       /* Login button bg (15%) */
-  --accent-badge-bg: #2a2646;     /* "New"/"Soon" nav badges (22%) */
+  /* accent: the focus ring and links only. Active nav, checks and borders use text tones. */
+  --accent: #8472fb;
+  --accent-text: #a99cfc;         /* 12–14px links */
+  --accent-ink: #121110;          /* text on the gradient (≥5:1 on every stop) */
 
   /* status */
-  --danger: #f5475f;              /* errors, blocking notices, 0 credits; never brand pink */
-
-  /* promo + badges */
-  --blue: #2663eb;                /* "CORE" badge */
-  --blue-offer: #3352e9;          /* "Special offer" badge */
-  --sky: #2a97f3;                 /* "BEST VALUE" */
-  --purple: #830eff;              /* "TOP" on mobile hub */
-  --gold: #e9d7a2;                /* "Contests" nav text */
+  --danger: #f5475f;              /* errors, 0 credits; never brand pink */
 
   /* shape */
-  --r-xs: 4px;   /* nav badges */
-  --r-sm: 6px;   /* banner button, small badges */
-  --r-md: 10px;  /* chips, nav buttons */
-  --r-lg: 12px;  /* setting cells, result tiles, video-sidebar cards */
-  --r-xl: 16px;  /* Generate, feature tiles, modal image panel */
-  --r-2xl: 24px; /* composer, modal */
+  --r-xs: 4px;   --r-sm: 6px;   --r-md: 8px;   /* buttons, chips, menu rows */
+  --r-lg: 12px;  /* inputs, tiles, menus */
+  --r-xl: 16px;  /* dialog, composer */
+  --r-2xl: 20px;
   --r-full: 9999px;
 
   /* spacing: 4px base */
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
   --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
 
-  /* elevation */
-  --lip: inset 0 -3px 0 rgb(0 0 0 / .4);                   /* gradient buttons */
-  --shadow-float: 0 12px 40px rgb(0 0 0 / .5);             /* composer, popovers */
+  /* elevation: menus and dialogs float; nothing else casts a shadow */
+  --shadow-float: 0 12px 40px rgb(0 0 0 / .5);
   --shadow-modal: 0 24px 80px rgb(0 0 0 / .6);
   --ring-focus: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--accent);
 }
 ```
 
+The old surface names (`bg-4`, `bg-5`, `chip`, `border-1..3`, the accent tints, the badge colours) are kept as transition aliases in `globals.css` and removed with the last page that uses them.
+
+**Rules.** Filled panels are for things that float (menus, dialogs) or need to be read as an input. Everything else sits on the page and is separated by spacing or a hairline. Buttons: the primary action on a page is white on dark (`--text-1` fill, `--bg-0` text); Generate alone is the gradient; secondary actions are text with a hover fill of `--bg-2`. Badges, pills and tags are not part of the system.
+
 ## 2. Typography
 
-- **Display: Barlow Condensed 800** (Google). It's condensed by default, so there's no width axis to configure. **This is a deliberate trade of fidelity for certainty.** Archivo at `font-stretch: 75%` is visually closer, but it only works if the wdth axis comes through `next/font`. If that fails silently, headlines render at normal width, and the condensed uppercase headline carries most of the look. Fallback stack: `"Barlow Condensed", "Arial Narrow", sans-serif`.
-- **Body: Inter** 400/500/600.
-- Numbers (credits, costs, counts) use `font-variant-numeric: tabular-nums`.
+- **One family: Onest** (Google, variable weight 400–700, native Cyrillic for the Russian locale). Loaded through `next/font` as `--font-onest`. Fallback stack: `ui-sans-serif, system-ui, sans-serif`.
+- Sentence case everywhere. No uppercase, no gradient words, no italics.
+- Numbers (credits, costs, seconds, ratios, counts) use `font-variant-numeric: tabular-nums`.
 
-| Role | Face | Size / line height | Weight | Case, tracking |
-|---|---|---|---|---|
-| Display (hero h1) | Barlow Condensed | 48/44 (mobile 34/32) | 800 | UPPER, 0. The second line is often `--brand-gradient` text |
-| h2 (section) | Barlow Condensed | 30/30 | 800 | UPPER, +0.005em. Often gradient text |
-| h3 (tile title) | Barlow Condensed | 22/24 | 800 | UPPER, +0.01em |
-| Title (modal, page) | Inter | 28/34 | 600 | Sentence case, −0.02em |
-| Body | Inter | 14/20 | 400 (UI labels 500) | 0 |
-| Small | Inter | 12/16 | 500 | 0 |
-| Badge | Inter | 10/12 | 700 *italic* | UPPER, +0.02em |
+| Role | Size / line height | Weight | Tracking |
+|---|---|---|---|
+| Display (page headline) | 44/48 (mobile 34/38) | 500 | −0.025em |
+| h2 (section) | 26/32 | 500 | −0.02em |
+| h3 (tile, plan name) | 18/24 | 500 | −0.01em |
+| Title (dialog) | 24/30 | 600 | −0.02em |
+| Wordmark | 15/20 | 600 | −0.01em |
+| Body | 14/20 | 400 (UI labels 500) | 0 |
+| Small | 12/16 | 500 | 0 |
+
+**Header.** 56px, sticky, `--bg-0` at 85% with a backdrop blur, 1px `--line-1` bottom edge. Left: the wordmark (24px mark + "Darkroom"), then four links 24px apart, 14/500, `--text-2`, the active one `--text-1`. Right: the credits figure (gradient sparkle + "6 credits", tabular, `--danger` at 0), the language button (globe + code), a hairline, then "Sign in" (text) and "Sign up" (white fill). Signed in, a 32px `--bg-2` circle with the initial replaces both. Below md: wordmark, credits (number only below sm), Sign up, menu button. The menu is a full-screen sheet with the same four links, Sign in, and the language control. There is no promo banner and no bottom tab bar.
+
+**Footer.** 1px `--line-1` top edge, 40px vertical padding. Left: wordmark, one line about the demo, "© 2026" in `--text-3`. Right: the four links plus Source.
 
 ## 3. Components
 

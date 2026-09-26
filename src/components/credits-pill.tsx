@@ -34,6 +34,7 @@ function useTickingNumber(target: number | null): number | null {
   return shown;
 }
 
+// The balance as a plain figure in the nav. The gradient sparkle marks it as live; it's the only colour up here.
 export function CreditsPill() {
   const router = useRouter();
   const { account, credits, openAuthModal } = useApp();
@@ -48,14 +49,13 @@ export function CreditsPill() {
         account?.status === "member" ? router.push("/pricing") : openAuthModal(empty ? "out-of-credits" : "signup")
       }
       aria-label={credits === null ? t("credits.label") : t("credits.count", { n: credits })}
-      className={`flex h-8 items-center gap-1.5 rounded-full border border-border-3 bg-bg-3 px-3 transition-colors duration-150 hover:bg-bg-5 ${
-        empty ? "motion-safe:animate-danger-pulse" : ""
+      className={`flex h-8 items-center gap-1.5 rounded-md px-2 text-sm font-medium tabular-nums transition-colors duration-150 hover:bg-bg-2 ${
+        empty ? "text-danger motion-safe:animate-danger-pulse" : "text-text-1"
       }`}
     >
       <SparkleIcon gradient className="size-3.5" />
-      <span className={`min-w-3 text-sm font-semibold tabular-nums ${empty ? "text-danger" : "text-text-1"}`}>
-        {shown ?? "–"}
-      </span>
+      <span aria-hidden className="sm:hidden">{shown ?? "–"}</span>
+      <span aria-hidden className="max-sm:hidden">{shown === null ? "–" : t("credits.count", { n: shown })}</span>
     </button>
   );
 }

@@ -8,7 +8,7 @@ import { ImageStudio } from "./image-studio";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
-  return { title: `${t("nav.image")} — Higgsfield AI Clone` };
+  return { title: t("nav.studio") };
 }
 
 export default function ImagePage() {

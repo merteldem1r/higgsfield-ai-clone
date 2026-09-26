@@ -51,18 +51,13 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
         aria-controls={menuId}
         aria-label={`${t("locale.label")}: ${LOCALE_NAMES[locale]}`}
         onClick={() => setOpen((o) => !o)}
-        className={`relative flex size-8 items-center justify-center rounded-md bg-bg-3 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 ${
+        className={`flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-semibold uppercase transition-colors duration-150 hover:bg-bg-2 hover:text-text-1 ${
           open ? "text-text-1" : "text-text-2"
         }`}
       >
         <GlobeIcon className="size-4" />
         {/* A language code, not a flag: flags name countries, and English or Russian don't belong to one. */}
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -bottom-1.5 rounded-xs bg-bg-5 px-1 text-[9px] leading-3 font-bold text-text-1 uppercase ring-2 ring-bg-0"
-        >
-          {locale}
-        </span>
+        <span aria-hidden>{locale}</span>
       </button>
 
       {open && (
@@ -72,7 +67,7 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
           role="menu"
           aria-label={t("locale.label")}
           onKeyDown={onMenuKeyDown}
-          className="absolute top-full right-0 z-50 mt-2 w-44 rounded-lg border border-border-3 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in motion-reduce:animate-fade-in"
+          className="absolute top-full right-0 z-50 mt-2 w-44 rounded-lg border border-line-2 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in motion-reduce:animate-fade-in"
         >
           {LOCALES.map((code) => {
             const checked = code === locale;
@@ -88,10 +83,10 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
                   buttonRef.current?.focus();
                   setLocale(code);
                 }}
-                className="flex h-10 w-full items-center gap-3 rounded-md px-2.5 text-left text-sm font-medium text-text-1 transition-colors duration-150 outline-none hover:bg-bg-3 focus-visible:bg-bg-3"
+                className="flex h-10 w-full items-center gap-3 rounded-md px-2.5 text-left text-sm font-medium text-text-1 transition-colors duration-150 outline-none hover:bg-bg-2 focus-visible:bg-bg-2"
               >
                 <span className="flex-1">{LOCALE_NAMES[code]}</span>
-                <CheckIcon className={`size-4 shrink-0 text-accent-text ${checked ? "" : "invisible"}`} />
+                <CheckIcon className={`size-4 shrink-0 ${checked ? "" : "invisible"}`} />
               </button>
             );
           })}
@@ -111,7 +106,7 @@ export function LocaleList() {
         <GlobeIcon className="size-4" />
         {t("locale.label")}
       </p>
-      <div className="flex gap-1 rounded-lg border border-border-3 bg-bg-2 p-1">
+      <div className="flex gap-1 rounded-lg bg-bg-1 p-1">
         {LOCALES.map((code) => {
           const checked = code === locale;
           return (
@@ -123,7 +118,7 @@ export function LocaleList() {
               lang={code}
               onClick={() => setLocale(code)}
               className={`flex h-9 min-w-0 flex-1 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors duration-150 ${
-                checked ? "bg-bg-5 text-text-1" : "text-text-2 hover:text-text-1"
+                checked ? "bg-bg-3 text-text-1" : "text-text-2 hover:text-text-1"
               }`}
             >
               <span className="truncate">{LOCALE_NAMES[code]}</span>

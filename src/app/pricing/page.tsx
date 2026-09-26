@@ -12,7 +12,7 @@ import { SignUpButton } from "./sign-up-button";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
-  return { title: `${t("nav.pricing")} — Higgsfield AI Clone` };
+  return { title: t("nav.pricing") };
 }
 
 const schnell = MODELS["flux-schnell"];

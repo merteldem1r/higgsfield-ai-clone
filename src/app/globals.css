@@ -7,83 +7,80 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* surfaces, darkest → lightest */
-  --color-bg-0: #0f1113;
-  --color-bg-1: #131517;
-  --color-bg-2: #1c1e20;
-  --color-bg-3: #1f2123;
-  --color-bg-4: #23262b;
-  --color-bg-5: #2e3135;
-  --color-chip: #222222;
-  --color-tabbar: #0b0c0e;
-  --color-overlay: rgb(0 0 0 / 0.8);
+  /* Surfaces: a warm near-black, one tone step apart. Separation comes from spacing and these steps, not boxes. */
+  --color-bg-0: #121110; /* page */
+  --color-bg-1: #1a1918; /* panels: dialog, menus, footer note */
+  --color-bg-2: #211f1d; /* raised: inputs, chips, hover on a panel */
+  --color-bg-3: #2a2826; /* hover on raised */
+  --color-overlay: rgb(0 0 0 / 0.7); /* dialog backdrop */
 
-  /* borders */
-  --color-border-1: #1f2123;
-  --color-border-2: #26292b;
-  --color-border-3: #2b2c2e;
+  /* Hairlines */
+  --color-line-1: #221f1d; /* on the page */
+  --color-line-2: #302d2a; /* on panels; input borders */
 
-  /* text */
-  --color-text-1: #ffffff;
-  --color-text-2: #898a8b;
-  --color-text-3: #737475;
-  --color-text-placeholder: #a0a1a2;
-  --color-text-disabled: #57595a;
+  /* Text: warm white, then two greys */
+  --color-text-1: #f4f1ec;
+  --color-text-2: #8c877f; /* labels, secondary copy (5.5:1 on bg-0) */
+  --color-text-3: #6b665f; /* meta, timestamps */
+  --color-text-placeholder: #7a756d;
+  --color-text-disabled: #55514b;
 
-  /* brand: stops sampled from src/app/logo.png, left → right */
+  /* Brand: the logo's stops, left → right. Spent on Generate and on whatever is live right now. */
   --color-brand-sky: #69c5fa;
   --color-brand-violet: #8472fb;
   --color-brand-pink: #ed77cc;
   --color-brand-peach: #fbca74;
 
-  /* accent: solid violet for small UI where a gradient would turn muddy (rings, borders, checks, links) */
+  /* Accent: the focus ring and links only. Active nav, checks and borders use text tones instead. */
   --color-accent: #8472fb;
-  --color-accent-text: #a99cfc;   /* lighter, so 12–14px text clears contrast on bg-0/1 */
-  --color-accent-hover: #c3b9fd;
-  --color-accent-ink: #0f1113;    /* text on the gradient and on accent fills */
-  --color-accent-tint: #1e1e2e;   /* accent 10% over bg-1 */
-  --color-accent-tint-2: #242339; /* accent 15% over bg-1: Login button */
-  --color-accent-badge-bg: #2a2646; /* accent 22% over bg-0: nav badges */
+  --color-accent-text: #a99cfc; /* 12–14px links on bg-0/1 */
+  --color-accent-ink: #121110; /* text on the gradient (≥5:1 on every stop) */
 
-  /* status: kept apart from brand pink so errors never read as on-brand */
+  /* Status: kept apart from brand pink so errors never read as on-brand */
   --color-danger: #f5475f;
 
-  /* auth modal carousel track (#3d3b3b, sampled from the recon modal) */
-  --color-progress-track: #3d3b3b;
-
-  /* third-party marks: Google's own "G" colors, which its brand rules require unchanged */
+  /* Third-party marks: Google's own "G" colors, which its brand rules require unchanged */
   --color-google-blue: #4285f4;
   --color-google-green: #34a853;
   --color-google-yellow: #fbbc05;
   --color-google-red: #ea4335;
 
-  /* badges */
-  --color-blue: #2663eb;
-  --color-blue-offer: #3352e9;
+  /* --- Transition aliases. Old names still referenced by pages not yet rebuilt; each is removed with its consumer. --- */
+  --color-bg-4: #211f1d;
+  --color-bg-5: #2a2826;
+  --color-chip: #211f1d;
+  --color-tabbar: #121110;
+  --color-border-1: #221f1d;
+  --color-border-2: #221f1d;
+  --color-border-3: #302d2a;
+  --color-accent-hover: #c3b9fd;
+  --color-accent-tint: #211f1d;
+  --color-accent-tint-2: #211f1d;
+  --color-accent-badge-bg: #2a2826;
+  --color-progress-track: #3a3733;
   --color-sky: #2a97f3;
-  --color-purple: #830eff;
-  --color-gold: #e9d7a2;
+  /* --- end transition aliases --- */
 
   /* shape: replaces Tailwind's radius scale, so rounded-lg = 12px here */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 24px;
+  --radius-2xl: 20px;
 
-  /* spacing: Tailwind's default --spacing (0.25rem = 4px) already matches --s-*, e.g. p-4 = 16px */
+  /* spacing: Tailwind's default --spacing (0.25rem = 4px) already matches the 4px base, e.g. p-4 = 16px */
 
-  /* elevation */
-  --inset-shadow-lip: inset 0 -3px 0 rgb(0 0 0 / 0.4);
-  --inset-shadow-lip-pressed: inset 0 -1px 0 rgb(0 0 0 / 0.4);
+  /* elevation: menus and dialogs float; nothing else casts a shadow */
   --shadow-float: 0 12px 40px rgb(0 0 0 / 0.5);
   --shadow-modal: 0 24px 80px rgb(0 0 0 / 0.6);
   --shadow-focus: 0 0 0 2px var(--color-bg-0), 0 0 0 4px var(--color-accent);
+
+  /* Transition: still used by the composer, plans and tiles until those are rebuilt */
+  --inset-shadow-lip: inset 0 -3px 0 rgb(0 0 0 / 0.4);
+  --inset-shadow-lip-pressed: inset 0 -1px 0 rgb(0 0 0 / 0.4);
   --shadow-photo: 0 8px 24px rgb(0 0 0 / 0.5);
-  /* Docked composer over scrolling results: shadow on all sides so it reads as floating above them. */
   --shadow-dock: 0 -12px 40px rgb(0 0 0 / 0.6), 0 16px 48px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.35);
-  /* Glow under gradient buttons: soft at rest, stronger on hover. */
   --shadow-brand-glow-soft: 0 4px 18px color-mix(in srgb, var(--color-brand-violet) 28%, transparent);
   --shadow-brand-glow: 0 8px 28px color-mix(in srgb, var(--color-brand-violet) 50%, transparent),
     0 2px 10px color-mix(in srgb, var(--color-brand-pink) 35%, transparent);
@@ -91,7 +88,7 @@
   /* motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* DESIGN.md §4. Transform animations are applied with motion-safe: at the call site. */
+  /* DESIGN.md §4. Transform animations are applied with motion-safe: at the call site. Trimmed with the studio rebuild. */
   --animate-fan-in: fan-in 500ms var(--ease-out) backwards;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-reveal: reveal 700ms var(--ease-out);
@@ -182,26 +179,29 @@
     50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 45%, transparent); }
   }
 
-  /* type roles; body (14/20) and small (12/16) are Tailwind's text-sm and text-xs */
-  --text-display: 48px;
-  --text-display--line-height: 44px;
+  /* Type roles (DESIGN.md §2). Sentence case, weight set at the call site. Body 14/20 and small 12/16 are text-sm and text-xs. */
+  --text-display: 44px;
+  --text-display--line-height: 48px;
+  --text-display--letter-spacing: -0.025em;
   --text-display-sm: 34px;
-  --text-display-sm--line-height: 32px;
-  --text-h2: 30px;
-  --text-h2--line-height: 30px;
-  --text-h2--letter-spacing: 0.005em;
-  --text-h3: 22px;
+  --text-display-sm--line-height: 38px;
+  --text-display-sm--letter-spacing: -0.02em;
+  --text-h2: 26px;
+  --text-h2--line-height: 32px;
+  --text-h2--letter-spacing: -0.02em;
+  --text-h3: 18px;
   --text-h3--line-height: 24px;
-  --text-h3--letter-spacing: 0.01em;
-  --text-title: 28px;
-  --text-title--line-height: 34px;
+  --text-h3--letter-spacing: -0.01em;
+  --text-title: 24px;
+  --text-title--line-height: 30px;
   --text-title--letter-spacing: -0.02em;
 }
 
-/* inline: these point at the variables next/font sets on <html> */
+/* inline: these point at the variable next/font sets on <html> */
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  /* Transition: one family now. Old font-display call sites resolve to it until each page is rebuilt. */
+  --font-display: var(--font-sans);
 }
 
 @layer base {
@@ -209,14 +209,9 @@
     color-scheme: dark;
   }
 
-  /* Height of the mobile tab bar; fixed-bottom UI and the body's bottom padding clear it. Zero from md up. */
+  /* Transition: the mobile tab bar is gone; the docked composer still reads this until the studio is rebuilt. */
   :root {
     --tabbar-h: 0px;
-  }
-  @media (width < 48rem) {
-    :root {
-      --tabbar-h: calc(64px + env(safe-area-inset-bottom));
-    }
   }
 
   /* showModal() makes the page inert but still scrollable. Lock it while any dialog is open;
@@ -253,7 +248,7 @@
   }
 }
 
-/* The logo gradient. Reserved for the big moments: Generate, Sign up, hero line, banner CTA. */
+/* The logo gradient. Reserved for Generate and for what is live: the generating tile, the caret, credits changing. */
 @utility bg-brand-gradient {
   background-image: linear-gradient(
     100deg,
@@ -308,7 +303,7 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-/* Pricing: the recommended and top plans get a faint tint of their CTA color, fading down into the panel. */
+/* Transition: pricing tints, removed with the pricing rebuild. */
 @utility bg-plan-plus {
   background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-brand-violet) 16%, var(--color-bg-1)), var(--color-bg-1) 55%);
 }
@@ -321,6 +316,7 @@
     radial-gradient(55% 120% at 0% 100%, color-mix(in srgb, var(--color-brand-violet) 24%, transparent), transparent);
 }
 
+/* Transition: gradient words go with the headline rebuild. */
 @utility text-brand-gradient {
   background-image: linear-gradient(
     100deg,
@@ -351,13 +347,7 @@
   background-size: 250% 100%;
 }
 
-/* Set before paint by the inline script in layout.tsx, so a dismissed banner never flashes. */
-html[data-banner="dismissed"] [data-promo-banner] {
-  display: none;
-}
-
-/* Scroll reveals (home). The Reveal component sets data-reveal on a container and data-revealed once it
-   enters the viewport; --reveal-i (set per child in JS) gives the 60ms stagger. Reduced motion keeps the fade only. */
+/* Transition: scroll reveals on the current home, removed with the home rebuild. */
 [data-reveal] > * {
   transition:
     opacity 400ms var(--ease-out),

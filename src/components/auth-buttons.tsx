@@ -14,7 +14,6 @@ import {
   BrandGradient,
   CheckIcon,
   ChevronRightIcon,
-  CrownIcon,
   GlobeIcon,
   HelpIcon,
   LogOutIcon,
@@ -29,11 +28,14 @@ const DOT_PITCH = 9;
 // Long enough to cross the gap from the avatar into the card without it closing.
 const CLOSE_DELAY_MS = 150;
 
+const MENU_ROW =
+  "flex h-10 w-full items-center gap-3 rounded-md px-2.5 text-left text-sm text-text-1 transition-colors duration-150 hover:bg-bg-2 [&>svg]:size-4.5 [&>svg]:text-text-2";
+
 export function AuthButtons() {
   const { account, openAuthModal } = useApp();
   const t = useT();
 
-  // Holds the space while the session is read, so a signed-in visitor never sees Login flash first.
+  // Holds the space while the session is read, so a signed-in visitor never sees Sign in flash first.
   if (account === null) return <span aria-hidden className="size-8" />;
   if (account.status === "member") return <AccountMenu email={account.email} handle={account.handle} />;
 
@@ -42,14 +44,14 @@ export function AuthButtons() {
       <button
         type="button"
         onClick={() => openAuthModal("login")}
-        className="flex h-8 items-center rounded-md bg-accent-tint-2 px-3 text-sm font-medium text-accent-text transition-colors duration-150 hover:bg-accent-badge-bg max-sm:hidden"
+        className="flex h-8 items-center rounded-md px-3 text-sm font-medium text-text-2 transition-colors duration-150 hover:bg-bg-2 hover:text-text-1 max-sm:hidden"
       >
         {t("auth.login")}
       </button>
       <button
         type="button"
         onClick={() => openAuthModal("signup")}
-        className="flex h-8 items-center rounded-md bg-brand-gradient px-3 text-sm font-semibold text-accent-ink transition-[filter] duration-150 hover:brightness-110"
+        className="flex h-8 items-center rounded-md bg-text-1 px-3 text-sm font-semibold text-bg-0 transition-colors duration-150 hover:bg-white"
       >
         {t("auth.signup")}
       </button>
@@ -136,14 +138,9 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={t("account.named", { name })}
-        className="flex size-8 items-center justify-center rounded-full bg-brand-gradient p-0.5 transition-[filter] duration-150 hover:brightness-110"
+        className="flex size-8 items-center justify-center rounded-full bg-bg-2 text-xs font-semibold text-text-1 uppercase ring-1 ring-line-2 transition-colors duration-150 hover:bg-bg-3"
       >
-        <span
-          aria-hidden
-          className="flex size-full items-center justify-center rounded-full bg-bg-1 text-xs font-bold text-text-1 uppercase"
-        >
-          {name.charAt(0)}
-        </span>
+        <span aria-hidden>{name.charAt(0)}</span>
       </button>
 
       {open && (
@@ -152,13 +149,14 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
           <div
             role="menu"
             aria-label={t("account.label")}
-            className="w-72 rounded-2xl border border-border-3 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in"
+            className="w-72 rounded-xl border border-line-2 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in motion-reduce:animate-fade-in"
           >
             <div className="flex items-center gap-3 px-2.5 pt-2 pb-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient p-0.5">
-                <span className="flex size-full items-center justify-center rounded-full bg-bg-2 text-sm font-bold uppercase">
-                  {name.charAt(0)}
-                </span>
+              <span
+                aria-hidden
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-bg-2 text-sm font-semibold uppercase ring-1 ring-line-2"
+              >
+                {name.charAt(0)}
               </span>
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{name}</p>
@@ -166,13 +164,8 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               </div>
             </div>
 
-            <div className="rounded-xl bg-bg-3 p-3">
-              <Link
-                href="/pricing"
-                role="menuitem"
-                onClick={close}
-                className="group flex items-center justify-between gap-2 text-sm"
-              >
+            <Link href="/pricing" role="menuitem" onClick={close} className="group block rounded-lg bg-bg-2 p-3 transition-colors duration-150 hover:bg-bg-3">
+              <span className="flex items-center justify-between gap-2 text-sm">
                 <span className="flex items-center gap-1.5 font-medium">
                   {t("account.credits")}
                   <span title={creditsHelp} aria-label={creditsHelp} className="text-text-3">
@@ -183,28 +176,13 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                   {t("account.left", { n: credits ?? "–" })}
                   <ChevronRightIcon className="size-4" />
                 </span>
-              </Link>
+              </span>
               <DotMeter value={credits ?? 0} />
-              <div className="my-3 h-px bg-border-3" />
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2.5 text-sm font-medium">
-                  <CrownIcon className="size-4.5 text-brand-peach" />
-                  {t("account.goPremium")}
-                </span>
-                <Link
-                  href="/pricing"
-                  role="menuitem"
-                  onClick={close}
-                  className="flex h-8 items-center rounded-full bg-brand-gradient px-3.5 text-sm font-semibold text-accent-ink transition-[filter] duration-150 hover:brightness-110"
-                >
-                  {t("account.upgrade")}
-                </Link>
-              </div>
-            </div>
+            </Link>
 
             <div className="mt-1.5 flex flex-col">
               <MenuLink href="/assets" icon={<BoxIcon />} onClick={close}>
-                {t("account.myAssets")}
+                {t("nav.gallery")}
               </MenuLink>
               <MenuLink href="/community" icon={<UsersIcon />} onClick={close}>
                 {t("nav.community")}
@@ -216,7 +194,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                 aria-expanded={languagesOpen}
                 aria-controls={languagesId}
                 onClick={() => setLanguagesOpen((v) => !v)}
-                className="flex h-10 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm text-text-1 transition-colors duration-150 hover:bg-bg-3 [&>svg]:size-4.5 [&>svg]:text-text-2"
+                className={MENU_ROW}
               >
                 <GlobeIcon />
                 <span className="flex-1">{t("locale.label")}</span>
@@ -242,12 +220,12 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                         aria-checked={checked}
                         lang={code}
                         onClick={() => setLocale(code)}
-                        className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm transition-colors duration-150 hover:bg-bg-3 ${
+                        className={`flex h-9 w-full items-center gap-3 rounded-md px-2.5 text-left text-sm transition-colors duration-150 hover:bg-bg-2 ${
                           checked ? "text-text-1" : "text-text-2 hover:text-text-1"
                         }`}
                       >
                         <span className="flex-1">{LOCALE_NAMES[code]}</span>
-                        <CheckIcon className={`size-4 shrink-0 text-accent-text ${checked ? "" : "invisible"}`} />
+                        <CheckIcon className={`size-4 shrink-0 ${checked ? "" : "invisible"}`} />
                       </button>
                     );
                   })}
@@ -255,13 +233,13 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
               )}
             </div>
 
-            <div className="my-1.5 h-px bg-border-1" />
+            <div className="my-1.5 h-px bg-line-1" />
             <button
               type="button"
               role="menuitem"
               onClick={() => void leave()}
               disabled={leaving}
-              className="flex h-10 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm font-medium text-text-1 transition-colors duration-150 hover:bg-bg-3 disabled:text-text-disabled [&>svg]:size-4.5 [&>svg]:text-text-2"
+              className={`${MENU_ROW} font-medium disabled:text-text-disabled`}
             >
               {leaving ? <SpinnerIcon className="motion-safe:animate-spin" /> : <LogOutIcon />}
               {leaving ? t("account.signingOut") : t("account.signOut")}
@@ -285,12 +263,7 @@ function MenuLink({
   children: ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      role="menuitem"
-      onClick={onClick}
-      className="flex h-10 items-center gap-3 rounded-lg px-2.5 text-sm text-text-1 transition-colors duration-150 hover:bg-bg-3 [&>svg]:size-4.5 [&>svg]:text-text-2"
-    >
+    <Link href={href} role="menuitem" onClick={onClick} className={MENU_ROW}>
       {icon}
       {children}
     </Link>
@@ -313,7 +286,7 @@ function DotMeter({ value }: { value: number }) {
           cy={DOT_PITCH / 2}
           r={2.75}
           fill={i < value ? `url(#${id})` : undefined}
-          className={i < value ? undefined : "fill-bg-5"}
+          className={i < value ? undefined : "fill-bg-3"}
         />
       ))}
     </svg>

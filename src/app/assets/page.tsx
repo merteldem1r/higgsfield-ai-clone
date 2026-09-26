@@ -6,7 +6,7 @@ import { AssetsBrowser } from "./assets-browser";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
-  return { title: `${t("nav.assets")} — Higgsfield AI Clone` };
+  return { title: t("nav.gallery") };
 }
 
 export default function AssetsPage() {
