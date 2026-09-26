@@ -7,21 +7,9 @@ import { stashDraft } from "@/components/composer/handoff";
 import { ReuseIcon } from "@/components/icons";
 import { Lightbox } from "@/components/lightbox";
 import { useT } from "@/components/locale-provider";
-import { ASPECTS, DEFAULT_ASPECT, DEFAULT_MODEL, isModelId, type AspectId } from "@/lib/credits";
+import { DEFAULT_ASPECT, DEFAULT_MODEL, isModelId, nearestAspect, type AspectId } from "@/lib/credits";
 
 import type { CommunityItem } from "./feed";
-
-// The feed doesn't send the aspect, so Recreate reads it off the loaded image: the closest ratio we offer.
-function nearestAspect(width: number, height: number): AspectId {
-  const ratio = width / height;
-  let best = DEFAULT_ASPECT;
-  for (const [id, size] of Object.entries(ASPECTS) as [AspectId, (typeof ASPECTS)[AspectId]][]) {
-    if (Math.abs(size.width / size.height - ratio) < Math.abs(ASPECTS[best].width / ASPECTS[best].height - ratio)) {
-      best = id;
-    }
-  }
-  return best;
-}
 
 // CSS columns balance by height, and with a small feed they left the last column empty. Explicit columns
 // filled round-robin always use every column, and the newest images read across the top row. One layout
@@ -81,6 +69,7 @@ function CommunityTile({
 }) {
   const [aspect, setAspect] = useState<AspectId | null>(null);
   const t = useT();
+  // The feed doesn't send the aspect, so Recreate reads it off the loaded image.
   // The page is server-rendered, so on a hard refresh a cached image can finish loading before hydration
   // attaches onLoad, and that event is gone. The ref checks for an already-loaded image on mount too.
   const measure = useCallback((img: HTMLImageElement | null) => {

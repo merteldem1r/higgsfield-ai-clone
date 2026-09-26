@@ -59,6 +59,18 @@ export function isAspectId(value: unknown): value is AspectId {
   return typeof value === "string" && Object.hasOwn(ASPECTS, value);
 }
 
+// For images whose aspect isn't stored (community, prompter): the closest ratio we offer to the loaded image.
+export function nearestAspect(width: number, height: number): AspectId {
+  const ratio = width / height;
+  let best = DEFAULT_ASPECT;
+  for (const [id, size] of Object.entries(ASPECTS) as [AspectId, (typeof ASPECTS)[AspectId]][]) {
+    if (Math.abs(size.width / size.height - ratio) < Math.abs(ASPECTS[best].width / ASPECTS[best].height - ratio)) {
+      best = id;
+    }
+  }
+  return best;
+}
+
 export function batchCost(model: ModelId, batch: number) {
   return { credits: MODELS[model].credits * batch, listCredits: MODELS[model].listCredits * batch };
 }

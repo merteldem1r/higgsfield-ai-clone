@@ -78,11 +78,13 @@ This is a clone of higgsfield.ai, an AI image and video generation product. A vi
 │   ├── app/
 │   │   ├── api/generate/route.ts  # POST: auth → start_generation → fal → Storage → complete
 │   │   ├── api/assets/[id]/favourite/route.ts  # POST: auth → set_favourite
+│   │   ├── api/prompter/route.ts  # POST: auth → picks resolved to our own prompts → shared prompt-help limit → LLM
 │   │   ├── _home/        # / sections: carousel, hero composer, showcase grid, presets
 │   │   ├── assets/       # /assets: the visitor's gallery (RLS-scoped reads), search, favourites, grid slider
 │   │   ├── community/    # /community: featured generations, read server-side (service role, whitelisted fields)
 │   │   ├── image/        # /image: chat thread, assistant lines, run media, ambient background
 │   │   ├── pricing/      # /pricing: plan cards (UI only), FAQ
+│   │   ├── prompter/     # /prompter: pick up to 3 images, get their look as phrases + subjects, hand off as a draft
 │   │   ├── globals.css   # Tailwind import + @theme design tokens
 │   │   ├── layout.tsx    # next/font, AppProvider, header, auth modal
 │   │   ├── page.tsx      # Explore home

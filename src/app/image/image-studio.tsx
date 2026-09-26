@@ -222,12 +222,12 @@ export function ImageStudio() {
       window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
     }
 
-    // A Reuse from the gallery or community: fill the composer and stop there. Only a click on Generate spends.
+    // A Reuse from the gallery, community or prompter: fill the composer and stop there. Only a click on Generate spends.
     const draft = takeStashedDraft();
     if (draft) {
-      const { prompt, ...settings } = draft;
+      const { prompt, select, ...settings } = draft;
       composerRef.current?.setSettings(settings);
-      composerRef.current?.setPrompt(prompt);
+      composerRef.current?.setPrompt(prompt, select);
     }
 
     const stashed = takeStashedGeneration();

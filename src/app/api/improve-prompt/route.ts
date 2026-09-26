@@ -2,14 +2,12 @@ import { NextResponse } from "next/server";
 
 import { MAX_PROMPT_LENGTH } from "@/lib/credits";
 import { improvePrompt } from "@/lib/fal";
-import { hashClientIp } from "@/lib/ip";
+import { hashClientIp, PROMPT_HELP_DAILY_LIMIT } from "@/lib/ip";
 import { createAdminClient, getUserId } from "@/lib/supabase/server";
 
 export const maxDuration = 20;
 
 const IMPROVER_TIMEOUT_MS = 15_000;
-// Free, so the only brake is per network. An LLM call is ~$0.00003, so this caps abuse, not spend.
-const IMPROVE_DAILY_LIMIT = 20;
 
 type StartResult = { ok: true; remaining: number } | { ok: false; code: "IP_LIMIT" };
 
@@ -50,7 +48,7 @@ export async function POST(request: Request) {
   const { data: started, error: startError } = await admin.rpc("start_prompt_improvement", {
     p_user_id: userId,
     p_ip_hash: hashClientIp(request),
-    p_daily_limit: IMPROVE_DAILY_LIMIT,
+    p_daily_limit: PROMPT_HELP_DAILY_LIMIT,
   });
   if (startError) {
     console.error("start_prompt_improvement failed", startError);

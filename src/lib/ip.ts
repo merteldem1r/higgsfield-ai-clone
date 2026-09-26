@@ -5,6 +5,10 @@ import { isIPv4, isIPv6 } from "node:net";
 
 const DEFAULT_IP_DAILY_LIMIT = 30;
 
+// The wand and /prompter both count against start_prompt_improvement, so they share this per-network allowance.
+// Free, so the only brake is per network. An LLM call is ~$0.00003, so this caps abuse, not spend.
+export const PROMPT_HELP_DAILY_LIMIT = 20;
+
 // Vercel overwrites both headers at its edge, so a client can't spoof them in
 // production. `next dev` keeps whatever the client sent, which the test script uses.
 function clientIp(request: Request): string | null {

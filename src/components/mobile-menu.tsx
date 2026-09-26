@@ -13,7 +13,8 @@ import { LocaleList } from "./locale-switcher";
 import { isActive, LINKS } from "./nav-data";
 import { Wordmark } from "./wordmark";
 
-// Below md the link row is hidden; this sheet carries the same four links, the language and sign-in.
+// Below xl the link row is hidden (seven links and the guest controls need ~1040px); this sheet carries the same
+// links, the language and sign-in.
 export function MobileMenu() {
   const pathname = usePathname();
   const { account, openAuthModal } = useApp();
@@ -36,7 +37,7 @@ export function MobileMenu() {
         aria-label={t("nav.openMenu")}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex size-8 shrink-0 items-center justify-center rounded-md text-text-2 transition-colors duration-150 hover:bg-bg-2 hover:text-text-1 md:hidden"
+        className="flex size-8 shrink-0 items-center justify-center rounded-md text-text-2 transition-colors duration-150 hover:bg-bg-2 hover:text-text-1 xl:hidden"
       >
         <MenuIcon className="size-4.5" />
       </button>
@@ -45,7 +46,7 @@ export function MobileMenu() {
         ref={dialogRef}
         onClose={() => setOpen(false)}
         aria-label={t("nav.menu")}
-        className="m-0 h-dvh max-h-none w-full max-w-none bg-bg-0 p-0 text-text-1 backdrop:bg-overlay open:motion-safe:animate-fade-in md:hidden"
+        className="m-0 h-dvh max-h-none w-full max-w-none bg-bg-0 p-0 text-text-1 backdrop:bg-overlay open:motion-safe:animate-fade-in xl:hidden"
       >
         <div className="flex h-full flex-col">
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-line-1 px-4">

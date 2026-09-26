@@ -11,6 +11,8 @@ const LIMIT = 200;
  * or anything credit-related.
  */
 export type CommunityItem = {
+  /** The generation's id. /prompter sends it back, and /api/prompter resolves only featured ones. */
+  id: string;
   prompt: string;
   model: string;
   createdAt: string;
@@ -20,6 +22,7 @@ export type CommunityItem = {
 };
 
 type FeaturedRow = {
+  id: string;
   prompt: string;
   model: string;
   created_at: string;
@@ -32,7 +35,7 @@ export async function loadCommunityFeed(): Promise<CommunityItem[]> {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("generations")
-    .select("prompt, model, created_at, profiles(handle), assets(storage_path)")
+    .select("id, prompt, model, created_at, profiles(handle), assets(storage_path)")
     .eq("featured", true)
     .eq("status", "succeeded")
     .order("created_at", { ascending: false })
@@ -43,6 +46,7 @@ export async function loadCommunityFeed(): Promise<CommunityItem[]> {
     row.assets
       .toSorted((a, b) => a.storage_path.localeCompare(b.storage_path))
       .map((asset) => ({
+        id: row.id,
         prompt: row.prompt,
         model: row.model,
         createdAt: row.created_at,

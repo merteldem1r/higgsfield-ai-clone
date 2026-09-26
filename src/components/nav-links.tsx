@@ -11,7 +11,7 @@ export function NavLinks() {
   const t = useT();
 
   return (
-    <ul className="flex items-center gap-6 max-md:hidden">
+    <ul className="flex items-center gap-6 max-xl:hidden">
       {LINKS.map(({ labelKey, route }) => {
         const active = isActive(route, pathname);
         return (

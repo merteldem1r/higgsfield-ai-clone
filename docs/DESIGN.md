@@ -80,7 +80,7 @@ The old surface names (`bg-4`, `bg-5`, `chip`, `border-1..3`, the accent tints, 
 | Body | 14/20 | 400 (UI labels 500) | 0 |
 | Small | 12/16 | 500 | 0 |
 
-**Header.** 56px, sticky, `--bg-0` at 85% with a backdrop blur, 1px `--line-1` bottom edge. Left: the wordmark (24px mark + "Darkroom"), then four links 24px apart, 14/500, `--text-2`, the active one `--text-1`. Right: the credits figure (gradient sparkle + "6 credits", tabular, `--danger` at 0), the language button (globe + code), a hairline, then "Sign in" (text) and "Sign up" (white fill). Signed in, a 32px `--bg-2` circle with the initial replaces both. Below md: wordmark, credits (number only below sm), Sign up, menu button. The menu is a full-screen sheet with the same four links, Sign in, and the language control. There is no promo banner and no bottom tab bar.
+**Header.** 56px, sticky, `--bg-0` at 85% with a backdrop blur, 1px `--line-1` bottom edge. Left: the wordmark (24px mark + "Darkroom"), then four links 24px apart, 14/500, `--text-2`, the active one `--text-1`. Right: the credits figure (gradient sparkle + "6 credits", tabular, `--danger` at 0), the language button (globe + code), a hairline, then "Sign in" (text) and "Sign up" (white fill). Signed in, a 32px `--bg-2` circle with the initial replaces both. Below xl (seven links plus the guest controls need about 1040px): wordmark, credits (number only below sm), Sign up, menu button. The menu is a full-screen sheet with the same links, Sign in, and the language control. There is no promo banner and no bottom tab bar.
 
 **Footer.** 1px `--line-1` top edge, 40px vertical padding. Left: wordmark, one line about the demo, "© 2026" in `--text-3`. Right: the four links plus Source.
 
@@ -121,6 +121,15 @@ The old surface names (`bg-4`, `bg-5`, `chip`, `border-1..3`, the accent tints, 
 
 - **Toast:** for one-off notices outside the sheet (e.g. "Prompt trimmed to 500 characters."). Top-center, 12px below the nav, one at a time, `--bg-1`, 1px `--line-2`, `--r-lg`, `--shadow-float`, a 3px tone bar, auto-dismiss in 5s (6s with an action), hover pauses.
 - **Accessibility:** the sheet is an ordered list labelled "Runs"; a pending frame is `role="status"`; the notice is `role="alert"`; the meter is decorative with the balance given as text. Only dialogs trap focus.
+
+**Prompter:** for the moment before the composer: no idea yet, or a look that can't be put into words. The studio's 880px column: h1 and one line, the bench, the result, then the images to pick from.
+- **Bench:** the composer's panel. Three 56px slots (filled ones show the pick and a remove button), the count ("2 of 3 picked"), and "Find the look" as the page's white primary. The notice slot sits under it, as in the composer.
+- **Pool:** featured generations, then the showcase: every image ours, with the prompt that made it. Round-robin columns as on /community (2, then 3 from sm). A tile is a toggle: picked is a 2px `--text-1` inset ring and its number; with three picked the rest drop to 40% and refuse. The expand button (top-right, as in the sheet) opens the lightbox.
+- **Thinking:** the pending frame at 192px tall: the breathing conic glow, elapsed seconds, a 2px estimate bar, and "Reading 2 prompts for the light, colour and framing they share." The only gradient on the page.
+- **Result:** "The look" with the picks as 32px thumbs, then 3–6 phrase toggles (32px chips; on is `--bg-2` with a check, off is a `--line-2` outline with a plus). Pointing at a phrase dims the picks it didn't come from. "Try it on": three subjects, each shown as the full prompt (subject in `--text-1`, the look in `--text-2`) with "Open in studio". That stashes a draft on Flux Schnell × 1 at the first pick's ratio, with the subject pre-selected. It never generates.
+- **Voice:** the model only reads prompts, so the copy says the look is "taken from the prompts behind your picks", never that anything looked at the images. The server drops any phrase it can't trace to a picked prompt.
+- **Earlier:** a new result pushes the last one down to a one-line record (time, phrases, "Show"), up to five, under a rule like the sheet's day rule.
+- **States:** nothing picked (empty slots, disabled button), picking, thinking, result, rate-limited (notice with a `--text-2` icon; the bench locks, like the wand, since both share one daily allowance per network), failed (notice with Try again), stale pick (Clear picks), featured feed failed (a line above the showcase-only grid), empty pool (the small fanned stack and a Generate link).
 
 **Fanned photo stack (empty states):**
 - **Arrangement:** four photos overlapping about 25%. Rotations are −8°, −3°, 0°, +6°, each lifted −4px. **The third photo is a circle**; the others are rounded squares with `--r-lg`.

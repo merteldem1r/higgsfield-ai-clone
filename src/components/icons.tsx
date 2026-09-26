@@ -152,6 +152,14 @@ export function ReuseIcon(props: IconProps) {
   );
 }
 
+export function ExpandIcon(props: IconProps) {
+  return (
+    <Stroke {...props}>
+      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+    </Stroke>
+  );
+}
+
 export function WandIcon(props: IconProps) {
   return (
     <Stroke {...props}>
