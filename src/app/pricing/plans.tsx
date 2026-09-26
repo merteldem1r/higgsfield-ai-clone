@@ -1,151 +1,221 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { useApp } from "@/components/app-provider";
-import { CheckIcon, SparkleIcon, XIcon } from "@/components/icons";
-import { useT } from "@/components/locale-provider";
+import { CheckIcon, XIcon } from "@/components/icons";
+import { useLocale } from "@/components/locale-provider";
 import { MODELS } from "@/lib/credits";
-import { tParts } from "@/lib/i18n";
 
-import { ANNUAL_DISCOUNT, imagesFor, PLANS, priceFor, type Plan } from "./plans-data";
+import { imagesFor, PLANS, priceFor, type Plan } from "./plans-data";
 
-const CARD: Record<Plan["id"], string> = {
-  starter: "border-border-2 bg-bg-1",
-  plus: "border-accent/40 bg-plan-plus shadow-brand-glow-soft",
-  ultra: "border-brand-pink/30 bg-plan-ultra",
+// One frame per this many Flux Schnell images. The strip is the plan's allowance you can see before you read it.
+const IMAGES_PER_FRAME = 25;
+const HIGHLIGHT: Plan["id"] = "plus";
+
+const schnell = MODELS["flux-schnell"];
+const dev = MODELS["flux-dev"];
+
+// Each plan is a step along the logo's spectrum, left to right: the name, the frame strip and the price carry
+// its slice, and the rule above the table is the whole gradient the columns sit under.
+const TONE: Record<Plan["id"], { text: string; stops: [string, string] }> = {
+  starter: { text: "text-brand-sky", stops: ["[stop-color:var(--color-brand-sky)]", "[stop-color:var(--color-brand-violet)]"] },
+  plus: { text: "text-brand-pink", stops: ["[stop-color:var(--color-brand-violet)]", "[stop-color:var(--color-brand-pink)]"] },
+  ultra: { text: "text-brand-peach", stops: ["[stop-color:var(--color-brand-pink)]", "[stop-color:var(--color-brand-peach)]"] },
 };
 
-const CTA: Record<Plan["id"], string> = {
-  starter: "bg-white text-black hover:bg-white/85",
-  plus: "bg-brand-gradient text-accent-ink inset-shadow-lip hover:brightness-110 active:translate-y-px active:inset-shadow-lip-pressed",
-  ultra: "bg-brand-pink text-accent-ink inset-shadow-lip hover:brightness-110 active:translate-y-px active:inset-shadow-lip-pressed",
-};
+type Row = { key: "images" | "credits" | "price" | "perImage" | "includes"; label: string; cell: (plan: Plan) => ReactNode };
 
 export function Plans() {
   const [annual, setAnnual] = useState(true);
   const { showToast } = useApp();
-  const t = useT();
-  const percent = Math.round(ANNUAL_DISCOUNT * 100);
-  const percentOff = t("pricing.off", { n: percent });
+  const { locale, t } = useLocale();
+  const money = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  const cents = new Intl.NumberFormat(locale, { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 3 });
+  const number = new Intl.NumberFormat(locale);
+
+  function choose() {
+    showToast({ tone: "neutral", text: t("pricing.paymentsToast") });
+  }
+
+  const rows: Row[] = [
+    {
+      key: "images",
+      label: t("pricing.row.images"),
+      cell: (plan) => {
+        const images = imagesFor(plan.credits);
+        return (
+          <div className="flex flex-col gap-2">
+            <FrameStrip count={Math.ceil(images.schnell / IMAGES_PER_FRAME)} stops={TONE[plan.id].stops} />
+            <span className="text-text-1">{t("pricing.approxImages", { n: images.schnell, model: schnell.label })}</span>
+            <span className="text-text-2">{t("pricing.approxImages", { n: images.dev, model: dev.label })}</span>
+          </div>
+        );
+      },
+    },
+    { key: "credits", label: t("pricing.row.credits"), cell: (plan) => <span className="text-text-1">{number.format(plan.credits)}</span> },
+    {
+      key: "price",
+      label: t("pricing.row.price"),
+      cell: (plan) => {
+        const price = priceFor(plan, annual);
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className={`text-h3 font-medium ${TONE[plan.id].text}`}>
+              {money.format(price)}
+              <span className="text-sm font-normal text-text-2"> {t("pricing.month")}</span>
+            </span>
+            {annual && <span className="text-xs text-text-3">{t("pricing.billedYear", { amount: money.format(price * 12) })}</span>}
+          </div>
+        );
+      },
+    },
+    {
+      key: "perImage",
+      label: t("pricing.row.perImage"),
+      cell: (plan) => (
+        <span className="text-text-1">
+          {cents.format(priceFor(plan, annual) / imagesFor(plan.credits).schnell)}
+          <span className="text-text-3"> {schnell.label}</span>
+        </span>
+      ),
+    },
+    {
+      key: "includes",
+      label: t("pricing.row.includes"),
+      cell: (plan) => (
+        <ul className="flex flex-col gap-2">
+          {plan.features.map((feature) => (
+            <li key={feature.label} className={`flex items-start gap-2 ${feature.included ? "text-text-1" : "text-text-disabled"}`}>
+              {feature.included ? <CheckIcon className={`mt-0.5 size-4 shrink-0 ${TONE[plan.id].text}`} /> : <XIcon className="mt-0.5 size-4 shrink-0" />}
+              {t(feature.label)}
+            </li>
+          ))}
+        </ul>
+      ),
+    },
+  ];
+
+  const cta = (plan: Plan) => (
+    <button
+      type="button"
+      onClick={choose}
+      className={`flex h-9 w-full items-center justify-center rounded-md text-sm font-semibold transition-colors duration-150 ${
+        plan.id === HIGHLIGHT ? "bg-text-1 text-bg-0 hover:bg-white" : "bg-bg-2 text-text-1 hover:bg-bg-3"
+      }`}
+    >
+      {t("pricing.get", { plan: plan.name })}
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={annual}
-          aria-label={t("pricing.billAnnually")}
-          onClick={() => setAnnual((a) => !a)}
-          className="flex h-10 items-center gap-3 rounded-lg border border-border-3 bg-bg-1 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-3"
-        >
-          <span className={annual ? "text-text-2" : "text-text-1"}>{t("pricing.monthly")}</span>
-          <span
-            className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${annual ? "bg-brand-gradient" : "bg-bg-5"}`}
-          >
-            <span
-              className={`absolute top-0.5 size-4 rounded-full bg-white shadow-photo transition-[left] duration-200 ease-out ${
-                annual ? "left-4.5" : "left-0.5"
+      <div role="radiogroup" aria-label={t("pricing.billing")} className="flex items-center gap-3 self-end text-sm">
+        <span className="text-text-2">{t("pricing.billing")}</span>
+        <span className="flex gap-1 rounded-md bg-bg-1 p-1">
+          {([false, true] as const).map((isAnnual) => (
+            <button
+              key={String(isAnnual)}
+              type="button"
+              role="radio"
+              aria-checked={annual === isAnnual}
+              onClick={() => setAnnual(isAnnual)}
+              className={`flex h-7 items-center rounded-sm px-3 font-medium transition-colors duration-150 ${
+                annual === isAnnual ? "bg-bg-3 text-text-1" : "text-text-2 hover:text-text-1"
               }`}
-            />
-          </span>
-          <span className={annual ? "text-text-1" : "text-text-2"}>{t("pricing.annual")}</span>
-          <Badge className="bg-brand-pink text-accent-ink">{percentOff}</Badge>
-        </button>
+            >
+              {isAnnual ? t("pricing.annual") : t("pricing.monthly")}
+            </button>
+          ))}
+        </span>
       </div>
 
-      <ul className="grid gap-4 lg:grid-cols-3">
-        {PLANS.map((plan) => {
-          const price = priceFor(plan, annual);
-          const images = imagesFor(plan.credits);
-          const yearlySaving = (plan.monthlyUsd - price) * 12;
-          const saveYear = tParts(t, "pricing.saveYear", "amount");
+      {/* Desktop: one spec table, plans as columns, so every number lines up against its neighbour. */}
+      <div aria-hidden className="hidden h-px bg-brand-gradient lg:block" />
+      <table className="hidden w-full border-collapse text-sm lg:table">
+        <thead>
+          <tr className="align-bottom">
+            <td className="w-40" />
+            {PLANS.map((plan) => (
+              <th key={plan.id} scope="col" className={`rounded-t-lg px-4 pt-5 pb-3 text-left font-normal ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-plan-glow" : ""}`}>
+                <span className={`block text-h2 font-medium ${TONE[plan.id].text}`}>{plan.name}</span>
+                <span className="block text-text-2">{t(plan.tagline)}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.key} className="border-t border-line-1 align-top">
+              <th scope="row" className="py-4 pr-4 text-left font-normal text-text-2">
+                {row.label}
+              </th>
+              {PLANS.map((plan) => (
+                <td key={plan.id} className={`px-4 py-4 ${plan.id === HIGHLIGHT ? "bg-bg-1" : ""}`}>
+                  {row.cell(plan)}
+                </td>
+              ))}
+            </tr>
+          ))}
+          <tr className="border-t border-line-1">
+            <td />
+            {PLANS.map((plan) => (
+              <td key={plan.id} className={`px-4 py-4 ${plan.id === HIGHLIGHT ? "rounded-b-lg bg-bg-1" : ""}`}>
+                {cta(plan)}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
 
-          return (
-            <li key={plan.id} className={`flex flex-col rounded-2xl border p-5 ${CARD[plan.id]}`}>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-display text-[28px] leading-7 uppercase">{plan.name}</h3>
-                {annual && <Badge className="bg-brand-pink text-accent-ink">{percentOff}</Badge>}
-                {plan.badge === "popular" && <Badge className="bg-brand-gradient text-accent-ink">{t("pricing.popular")}</Badge>}
-                {plan.badge === "best-value" && <Badge className="bg-sky text-white">{t("pricing.bestValue")}</Badge>}
-              </div>
-              <p className="mt-1.5 text-sm text-text-2">{t(plan.tagline)}</p>
-
-              <div className="mt-5 rounded-xl bg-black/25 p-4 ring-1 ring-white/5">
-                <p className="flex items-center gap-2 text-[15px] font-semibold">
-                  <SparkleIcon gradient className="size-4" />
-                  {t("pricing.perMonth", { n: plan.credits })}
-                </p>
-                <p className="mt-2 pl-6 text-xs leading-5 text-text-2">
-                  {t("pricing.approxImages", { n: images.schnell, model: MODELS["flux-schnell"].label })}
-                  <br />
-                  {t("pricing.approxImages", { n: images.dev, model: MODELS["flux-dev"].label })}
-                </p>
-              </div>
-
-              <p className="mt-6 flex items-baseline gap-2">
-                {annual && (
-                  <s className="font-display text-[32px] leading-8 text-brand-pink decoration-2">${plan.monthlyUsd}</s>
-                )}
-                <span className="font-display text-[40px] leading-10">${price}</span>
-                <span className="text-sm text-text-2">
-                  {t("pricing.month")}
-                  {annual ? t("pricing.billedAnnually") : ""}
-                </span>
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  showToast({
-                    tone: "neutral",
-                    text: t("pricing.paymentsToast"),
-                  })
-                }
-                className={`mt-4 flex h-12 w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-[background-color,filter,translate] duration-150 ${CTA[plan.id]}`}
-              >
-                {t("pricing.get", { plan: plan.name })}
-              </button>
-              <p className="mt-2.5 text-center text-xs text-text-2">
-                {annual ? (
-                  <>
-                    {saveYear[0]}
-                    <span className="font-semibold text-text-1">{t("pricing.saveAmount", { n: yearlySaving })}</span>
-                    {saveYear[1]}
-                  </>
-                ) : (
-                  t("pricing.switchAnnual", { n: percent })
-                )}
-              </p>
-
-              <ul className="mt-5 flex flex-col gap-2.5 border-t border-white/6 pt-5">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature.label}
-                    className={`flex items-center gap-2.5 text-sm ${feature.included ? "text-text-1" : "text-text-disabled"}`}
-                  >
-                    {feature.included ? (
-                      <CheckIcon className="size-4 shrink-0 text-accent-text" />
-                    ) : (
-                      <XIcon className="size-4 shrink-0" />
-                    )}
-                    {t(feature.label)}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          );
-        })}
-      </ul>
+      {/* Below lg: the same rows, one plan after another. */}
+      <div className="flex flex-col gap-4 lg:hidden">
+        {PLANS.map((plan) => (
+          <section key={plan.id} aria-label={plan.name} className={`relative flex flex-col gap-4 overflow-hidden rounded-lg p-4 ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-plan-glow" : "ring-1 ring-line-1"}`}>
+            <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-brand-gradient" />
+            <div>
+              <h3 className={`text-h2 font-medium ${TONE[plan.id].text}`}>{plan.name}</h3>
+              <p className="text-sm text-text-2">{t(plan.tagline)}</p>
+            </div>
+            <dl className="flex flex-col gap-3 text-sm">
+              {rows.map((row) => (
+                <div key={row.key} className="flex flex-col gap-1 border-t border-line-1 pt-3">
+                  <dt className="text-xs text-text-2">{row.label}</dt>
+                  <dd>{row.cell(plan)}</dd>
+                </div>
+              ))}
+            </dl>
+            {cta(plan)}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
 
-function Badge({ children, className }: { children: string; className: string }) {
+// Tiny 16:9 frames, one per 25 Flux Schnell images, 14 to a row, all cut from one gradient in the plan's
+// colours. Decorative: the counts next to it carry the numbers.
+const PER_ROW = 14;
+const FW = 14;
+const FH = 8;
+const GAP = 2;
+
+function FrameStrip({ count, stops }: { count: number; stops: [string, string] }) {
+  const id = useId();
+  const rows = Math.ceil(count / PER_ROW);
+  const width = Math.min(count, PER_ROW) * (FW + GAP) - GAP;
+  const height = rows * (FH + GAP) - GAP;
   return (
-    <span className={`flex h-5 items-center rounded-xs px-1.5 text-[10px] leading-3 font-bold tracking-[0.02em] uppercase italic ${className}`}>
-      {children}
-    </span>
+    <svg aria-hidden viewBox={`0 0 ${width} ${height}`} className="block h-auto" width={width} height={height}>
+      <defs>
+        <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={0} x2={width} y1={0} y2={0}>
+          <stop offset="0" className={stops[0]} />
+          <stop offset="1" className={stops[1]} />
+        </linearGradient>
+      </defs>
+      {Array.from({ length: count }, (_, i) => (
+        <rect key={i} x={(i % PER_ROW) * (FW + GAP)} y={Math.floor(i / PER_ROW) * (FH + GAP)} width={FW} height={FH} rx={2} fill={`url(#${id})`} />
+      ))}
+    </svg>
   );
 }

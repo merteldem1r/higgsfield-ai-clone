@@ -59,7 +59,7 @@ const ASPECT_OPTIONS: ChipOption<AspectId>[] = (Object.keys(ASPECTS) as AspectId
 }));
 
 const TEXTAREA =
-  "field-sizing-content max-h-60 min-h-18 w-full resize-none text-base leading-6 wrap-break-word whitespace-pre-wrap";
+  "field-sizing-content max-h-60 min-h-6 w-full resize-none text-base leading-6 wrap-break-word whitespace-pre-wrap";
 
 const STEP =
   "flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-3 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent";
@@ -234,7 +234,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, notice, onEdit }:
               showToast({ tone: "neutral", text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }) });
             }
           }}
-          rows={3}
+          rows={1}
           maxLength={MAX_PROMPT_LENGTH}
           aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
           placeholder={t("composer.placeholder")}

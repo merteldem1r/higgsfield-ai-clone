@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { AppProvider } from "@/components/app-provider";
 import { AuthModal } from "@/components/auth-modal";
 import { LocaleProvider } from "@/components/locale-provider";
+import { SiteFooter } from "@/components/site-footer";
 import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <AppProvider>
             <AppHeader />
             {children}
+            <SiteFooter />
             <AuthModal />
           </AppProvider>
         </LocaleProvider>

@@ -13,7 +13,7 @@ export function SignUpButton({ className, children }: { className: string; child
   // Already upgraded: the bonus is on their balance, so the button would only open a modal that does nothing.
   if (account?.status === "member") {
     return (
-      <p className="mt-6 flex h-10 items-center gap-2 text-sm font-medium text-accent-text">
+      <p className="flex h-9 shrink-0 items-center gap-2 text-sm font-medium text-text-1">
         <CheckIcon className="size-4" />
         {t("pricing.signedUp", { n: UPGRADE_BONUS })}
       </p>

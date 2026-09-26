@@ -58,7 +58,6 @@
   --color-accent-tint-2: #211f1d;
   --color-accent-badge-bg: #2a2826;
   --color-progress-track: #3a3733;
-  --color-sky: #2a97f3;
   /* --- end transition aliases --- */
 
   /* shape: replaces Tailwind's radius scale, so rounded-lg = 12px here */
@@ -68,6 +67,9 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-2xl: 20px;
+
+  /* layout: the one column every page uses (880px content + 16px gutters) */
+  --container-page: 57rem;
 
   /* spacing: Tailwind's default --spacing (0.25rem = 4px) already matches the 4px base, e.g. p-4 = 16px */
 
@@ -79,10 +81,6 @@
   /* Transition: still used by the composer, plans and tiles until those are rebuilt */
   --inset-shadow-lip: inset 0 -3px 0 rgb(0 0 0 / 0.4);
   --inset-shadow-lip-pressed: inset 0 -1px 0 rgb(0 0 0 / 0.4);
-  --shadow-photo: 0 8px 24px rgb(0 0 0 / 0.5);
-  --shadow-brand-glow-soft: 0 4px 18px color-mix(in srgb, var(--color-brand-violet) 28%, transparent);
-  --shadow-brand-glow: 0 8px 28px color-mix(in srgb, var(--color-brand-violet) 50%, transparent),
-    0 2px 10px color-mix(in srgb, var(--color-brand-pink) 35%, transparent);
 
   /* motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -279,19 +277,6 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-/* Transition: pricing tints, removed with the pricing rebuild. */
-@utility bg-plan-plus {
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-brand-violet) 16%, var(--color-bg-1)), var(--color-bg-1) 55%);
-}
-@utility bg-plan-ultra {
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-brand-pink) 13%, var(--color-bg-1)), var(--color-bg-1) 55%);
-}
-@utility bg-promo {
-  background-image:
-    radial-gradient(60% 140% at 100% 0%, color-mix(in srgb, var(--color-brand-pink) 26%, transparent), transparent),
-    radial-gradient(55% 120% at 0% 100%, color-mix(in srgb, var(--color-brand-violet) 24%, transparent), transparent);
-}
-
 /* Transition: gradient words go with the headline rebuild. */
 @utility text-brand-gradient {
   background-image: linear-gradient(
@@ -321,6 +306,16 @@
   background-size: 200% 100%;
   background-clip: text;
   color: transparent;
+}
+
+/* Pricing: a soft violet-to-pink glow under the highlighted plan's column. */
+@utility bg-plan-glow {
+  background-image: radial-gradient(
+    70% 60% at 50% 0%,
+    color-mix(in srgb, var(--color-brand-violet) 22%, transparent),
+    color-mix(in srgb, var(--color-brand-pink) 8%, transparent) 60%,
+    transparent
+  );
 }
 
 /* Pending-tile sweep; paired with animate-shimmer. */

@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { FannedStack } from "@/components/fanned-stack";
 import { SparkleIcon } from "@/components/icons";
-import { SiteFooter } from "@/components/site-footer";
 import type { T } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 
@@ -63,7 +62,6 @@ export default async function CommunityPage() {
           <CommunityGrid items={items} />
         )}
       </main>
-      <SiteFooter />
     </>
   );
 }

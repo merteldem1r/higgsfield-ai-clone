@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { SiteFooter } from "@/components/site-footer";
 import { getT } from "@/lib/i18n/server";
 
 import { HeroComposer, HomeComposerProvider } from "./_home/home-composer";
@@ -56,7 +55,6 @@ export default async function Home() {
           </Section>
         </HomeComposerProvider>
       </main>
-      <SiteFooter />
     </>
   );
 }
