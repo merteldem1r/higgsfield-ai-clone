@@ -23,9 +23,8 @@ const TONE: Record<FaqGroup["id"], { text: string; dot: string; openDot: string 
 export default async function FaqPage() {
   const t = await getT();
   return (
-    <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-12 px-4 pb-24">
-      <div className="relative -mx-4 flex flex-col gap-4 bg-top-glow px-4 pt-12 pb-2">
-        <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-brand-gradient" />
+    <main className="mx-auto flex w-full max-w-[calc(880px+2rem)] flex-1 flex-col gap-12 px-4 pt-12 pb-24">
+      <div className="flex flex-col gap-4">
         <h1 className="text-display-sm font-medium sm:text-display">{t("faq.title")}</h1>
         <p className="max-w-2xl text-base text-text-2">{t("faq.intro")}</p>
         <nav aria-label={t("faq.sections")} className="flex flex-wrap gap-2 pt-2">

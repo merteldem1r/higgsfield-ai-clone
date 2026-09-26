@@ -18,7 +18,7 @@ import { FAQ_PARAMS, PRICING_FAQ } from "../faq/faq-data";
 export default async function PricingPage() {
   const t = await getT();
   return (
-    <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-12 px-4 pt-12 pb-24">
+    <main className="mx-auto flex w-full max-w-[calc(880px+2rem)] flex-1 flex-col gap-12 px-4 pt-12 pb-24">
       <section aria-labelledby="plans-title" className="flex flex-col gap-8">
         <div className="flex flex-col gap-3">
           <h1 id="plans-title" className="text-display-sm font-medium sm:text-display">

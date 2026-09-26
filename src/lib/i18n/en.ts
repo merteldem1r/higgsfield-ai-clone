@@ -349,6 +349,8 @@ export const en = {
   "contact.sent": "Your mail app should have opened. If it didn't, write to {email}.",
   "contact.readFaq": "Read the answers first",
   "nav.faq": "FAQ",
+  "assets.intro": "Every image you make, saved here automatically. Search by prompt, keep favourites, and reuse any prompt in the studio.",
+  "image.backToComposer": "Back to the composer",
 } as const;
 
 export type MessageKey = keyof typeof en;

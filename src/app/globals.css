@@ -68,8 +68,8 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* layout: the one column every page uses (880px content + 16px gutters) */
-  --container-page: 57rem;
+  /* layout: every page's content column is the header's width (1440px), with the header's 16/24px gutters */
+  --container-page: 90rem;
 
   /* spacing: Tailwind's default --spacing (0.25rem = 4px) already matches the 4px base, e.g. p-4 = 16px */
 
@@ -186,6 +186,13 @@
 @layer base {
   html {
     color-scheme: dark;
+  }
+
+  /* In-page anchors (the FAQ's section links) glide instead of jumping. Off under reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   /* showModal() makes the page inert but still scrollable. Lock it while any dialog is open;
@@ -312,6 +319,16 @@
 @utility bg-top-glow {
   background-image: radial-gradient(
     70% 60% at 50% 0%,
+    color-mix(in srgb, var(--color-brand-violet) 22%, transparent),
+    color-mix(in srgb, var(--color-brand-pink) 8%, transparent) 60%,
+    transparent
+  );
+}
+
+/* The same glow rising from the bottom edge: the foot of the mobile sheet. */
+@utility bg-bottom-glow {
+  background-image: radial-gradient(
+    80% 70% at 50% 100%,
     color-mix(in srgb, var(--color-brand-violet) 22%, transparent),
     color-mix(in srgb, var(--color-brand-pink) 8%, transparent) 60%,
     transparent

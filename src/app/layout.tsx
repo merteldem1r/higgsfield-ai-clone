@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/app-header";
 import { AppProvider } from "@/components/app-provider";
 import { AuthModal } from "@/components/auth-modal";
 import { LocaleProvider } from "@/components/locale-provider";
+import { PageRule } from "@/components/page-rule";
 import { SiteFooter } from "@/components/site-footer";
 import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
@@ -25,11 +26,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={`${onest.variable} h-full antialiased`}>
+    // data-scroll-behavior: the document scrolls smoothly for in-page anchors; without this flag Next 16 would
+    // animate its own scroll-to-top on navigation and then land under the sticky header.
+    <html lang={locale} data-scroll-behavior="smooth" className={`${onest.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <LocaleProvider locale={locale}>
           <AppProvider>
             <AppHeader />
+            <PageRule />
             {children}
             <SiteFooter />
             <AuthModal />

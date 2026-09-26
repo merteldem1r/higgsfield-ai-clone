@@ -16,9 +16,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ContactPage() {
   const t = await getT();
   return (
-    <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-10 px-4 pb-24">
-      <div className="relative -mx-4 flex flex-col gap-3 bg-top-glow px-4 pt-12 pb-2">
-        <span aria-hidden className="absolute inset-x-4 top-0 h-px bg-brand-gradient" />
+    <main className="mx-auto flex w-full max-w-[calc(880px+2rem)] flex-1 flex-col gap-10 px-4 pt-12 pb-24">
+      <div className="flex flex-col gap-3">
         <h1 className="text-display-sm font-medium sm:text-display">{t("nav.contact")}</h1>
         <p className="max-w-2xl text-base text-text-2">{t("contact.intro")}</p>
       </div>

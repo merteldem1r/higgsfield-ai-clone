@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { CONTACT_EMAIL, GITHUB_URL, LINKEDIN_URL } from "@/app/contact/channels";
+
 import { useApp } from "./app-provider";
 import { MenuIcon, XIcon } from "./icons";
 import { useT } from "./locale-provider";
@@ -58,7 +60,7 @@ export function MobileMenu() {
             </button>
           </div>
 
-          <ul className="flex-1 overflow-y-auto px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+          <ul className="flex-1 overflow-y-auto px-2 pt-2 pb-4">
             {LINKS.map(({ labelKey, route }) => {
               const active = isActive(route, pathname);
               return (
@@ -95,6 +97,34 @@ export function MobileMenu() {
               <LocaleList />
             </li>
           </ul>
+
+          {/* The sheet's foot: the ways to reach us, each a step of the spectrum, over the glow rising from the edge. */}
+          <div className="relative shrink-0 bg-bottom-glow px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+24px)]">
+            <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-brand-gradient opacity-50" />
+            <p className="text-xs font-medium text-text-2">{t("nav.contact")}</p>
+            <ul className="mt-3 flex flex-col gap-2.5 text-sm">
+              {CONTACT_EMAIL && (
+                <li>
+                  <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-3 text-text-1">
+                    <span aria-hidden className="size-1.5 rounded-full bg-brand-sky" />
+                    {CONTACT_EMAIL}
+                  </a>
+                </li>
+              )}
+              <li>
+                <a href={GITHUB_URL} className="flex items-center gap-3 text-text-1">
+                  <span aria-hidden className="size-1.5 rounded-full bg-brand-violet" />
+                  github.com/merteldem1r
+                </a>
+              </li>
+              <li>
+                <a href={LINKEDIN_URL} className="flex items-center gap-3 text-text-1">
+                  <span aria-hidden className="size-1.5 rounded-full bg-brand-pink" />
+                  linkedin.com/in/merteldemir
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </dialog>
     </>

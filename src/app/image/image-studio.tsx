@@ -12,7 +12,7 @@ import {
   takeStashedGeneration,
 } from "@/components/composer/handoff";
 import { useFavourite } from "@/components/favourite-button";
-import { AlertIcon } from "@/components/icons";
+import { AlertIcon, ChevronUpIcon, SparkleIcon } from "@/components/icons";
 import { useLocale } from "@/components/locale-provider";
 import { MadeHereGrid } from "@/components/made-here-grid";
 import { PresetStrip } from "@/components/preset-strip";
@@ -108,6 +108,8 @@ export function ImageStudio() {
   const blockedRef = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  // True once the composer has scrolled out of view; the floating "back" pill shows only then.
+  const [composerAway, setComposerAway] = useState(false);
   // The arrival effect below runs once, so it calls generate through this ref to get the current one.
   const latestGenerate = useRef<((request: GenerateRequest) => Promise<boolean>) | null>(null);
 
@@ -123,6 +125,14 @@ export function ImageStudio() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const el = topRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setComposerAway(!entry.isIntersecting), { rootMargin: "-56px 0px 0px 0px" });
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   const setFavourite = useFavourite((assetId, favourite) =>
@@ -348,6 +358,19 @@ export function ImageStudio() {
           </div>
         )}
       </main>
+
+      {/* Floating way back to the composer from deep in a long sheet. Rises in when the composer leaves the viewport. */}
+      {composerAway && runs.length > 0 && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed right-4 bottom-6 z-30 flex h-10 items-center gap-2 rounded-full bg-bg-1 pr-4 pl-3 text-sm font-medium text-text-1 shadow-float ring-1 ring-line-2 transition-colors duration-150 hover:bg-bg-2 motion-safe:animate-rise-in motion-reduce:animate-fade-in sm:right-6"
+        >
+          <SparkleIcon gradient className="size-4" />
+          {t("image.backToComposer")}
+          <ChevronUpIcon className="size-3.5 text-text-2" />
+        </button>
+      )}
     </>
   );
 }

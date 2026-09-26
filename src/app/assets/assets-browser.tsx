@@ -224,9 +224,9 @@ export function AssetsBrowser() {
       <section aria-labelledby="assets-title" className="flex min-w-0 flex-1 flex-col">
         <div className="mb-4 flex min-h-10 items-center justify-between gap-4">
           <div className="flex items-baseline gap-2.5">
-            <h1 id="assets-title" className="text-xl font-semibold tracking-[-0.01em]">
+            <h2 id="assets-title" className="text-h3 font-medium">
               {t(TITLES[filter])}
-            </h1>
+            </h2>
             {base.length > 0 && (
               <span className="text-sm text-text-2 tabular-nums">
                 {needle

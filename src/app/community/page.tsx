@@ -29,26 +29,15 @@ export default async function CommunityPage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-360 flex-1 px-4 pt-8 pb-16 sm:pt-10 sm:px-6">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-h2 uppercase">
-              <span className="text-brand-gradient">{t("nav.community")}</span>
-            </h1>
-            <p className="mt-1.5 text-sm text-text-2">
-              {t("community.text")}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
+      <main className="mx-auto flex w-full max-w-page flex-1 flex-col gap-12 px-4 pt-12 pb-24 sm:px-6">
+        <div className="flex flex-col gap-3">
+          <h1 className="text-display-sm font-medium sm:text-display">{t("nav.community")}</h1>
+          <p className="max-w-2xl text-base text-text-2">{t("community.text")}</p>
+          <div className="flex flex-wrap items-center gap-4 pt-1 text-sm">
             {items && items.length > 0 && (
-              <span className="text-sm text-text-2 tabular-nums">
-                {t("community.stats", { n: items.length, c: creatorCount(items) })}
-              </span>
+              <span className="text-text-3 tabular-nums">{t("community.stats", { n: items.length, c: creatorCount(items) })}</span>
             )}
-            <Link
-              href="/image"
-              className="flex h-9 items-center rounded-md bg-bg-3 px-3.5 text-sm font-medium transition-colors duration-150 hover:bg-bg-5"
-            >
+            <Link href="/image" className="text-text-2 transition-colors duration-150 hover:text-text-1">
               {t("home.openImage")}
             </Link>
           </div>

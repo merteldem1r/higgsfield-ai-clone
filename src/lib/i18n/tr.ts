@@ -347,4 +347,6 @@ export const tr: Partial<Record<MessageKey, string>> = {
   "contact.sent": "E-posta uygulaman açılmış olmalı. Açılmadıysa {email} adresine yaz.",
   "contact.readFaq": "Önce cevapları oku",
   "nav.faq": "SSS",
+  "assets.intro": "Ürettiğin her görsel otomatik olarak burada saklanır. İsteme göre ara, favorilerini tut ve herhangi bir istemi stüdyoda yeniden kullan.",
+  "image.backToComposer": "Composer'a dön",
 };
