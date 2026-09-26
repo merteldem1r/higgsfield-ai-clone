@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { getT } from "@/lib/i18n/server";
 
+import { SOURCE_URL } from "@/app/contact/channels";
+
 import { LINKS } from "./nav-data";
 import { Wordmark } from "./wordmark";
 
@@ -23,7 +25,7 @@ export async function SiteFooter() {
               {t(labelKey)}
             </Link>
           ))}
-          <a href="https://github.com/merteldem1r/higgsfield-ai-clone" className={LINK}>
+          <a href={SOURCE_URL} className={LINK}>
             {t("footer.source")}
           </a>
         </nav>

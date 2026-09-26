@@ -137,7 +137,7 @@ export function Plans() {
           <tr className="align-bottom">
             <td className="w-40" />
             {PLANS.map((plan) => (
-              <th key={plan.id} scope="col" className={`rounded-t-lg px-4 pt-5 pb-3 text-left font-normal ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-plan-glow" : ""}`}>
+              <th key={plan.id} scope="col" className={`rounded-t-lg px-4 pt-5 pb-3 text-left font-normal ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-top-glow" : ""}`}>
                 <span className={`block text-h2 font-medium ${TONE[plan.id].text}`}>{plan.name}</span>
                 <span className="block text-text-2">{t(plan.tagline)}</span>
               </th>
@@ -171,7 +171,7 @@ export function Plans() {
       {/* Below lg: the same rows, one plan after another. */}
       <div className="flex flex-col gap-4 lg:hidden">
         {PLANS.map((plan) => (
-          <section key={plan.id} aria-label={plan.name} className={`relative flex flex-col gap-4 overflow-hidden rounded-lg p-4 ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-plan-glow" : "ring-1 ring-line-1"}`}>
+          <section key={plan.id} aria-label={plan.name} className={`relative flex flex-col gap-4 overflow-hidden rounded-lg p-4 ${plan.id === HIGHLIGHT ? "bg-bg-1 bg-top-glow" : "ring-1 ring-line-1"}`}>
             <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-brand-gradient" />
             <div>
               <h3 className={`text-h2 font-medium ${TONE[plan.id].text}`}>{plan.name}</h3>

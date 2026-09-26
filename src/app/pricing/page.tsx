@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ChevronUpIcon } from "@/components/icons";
-import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
-import type { MessageKey } from "@/lib/i18n";
+import { FREE_CREDITS, UPGRADE_BONUS } from "@/lib/credits";
 import { getT } from "@/lib/i18n/server";
 
 import { Plans } from "./plans";
@@ -14,28 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("nav.pricing") };
 }
 
-const schnell = MODELS["flux-schnell"];
-const dev = MODELS["flux-dev"];
-
-// Answers describe how this demo really behaves; the plans above are the only illustrative part.
-const FAQ: { q: MessageKey; a: MessageKey }[] = [
-  { q: "faq.credits.q", a: "faq.credits.a" },
-  { q: "faq.free.q", a: "faq.free.a" },
-  { q: "faq.failed.q", a: "faq.failed.a" },
-  { q: "faq.buy.q", a: "faq.buy.a" },
-  { q: "faq.limit.q", a: "faq.limit.a" },
-  { q: "faq.higgs.q", a: "faq.higgs.a" },
-];
-
-const FAQ_PARAMS = {
-  schnell: schnell.label,
-  schnellCost: schnell.credits,
-  dev: dev.label,
-  devCost: dev.credits,
-  free: FREE_CREDITS,
-  schnellCount: Math.floor(FREE_CREDITS / schnell.credits),
-  devCount: Math.floor(FREE_CREDITS / dev.credits),
-};
+import { FAQ_PARAMS, PRICING_FAQ } from "../faq/faq-data";
 
 export default async function PricingPage() {
   const t = await getT();
@@ -66,7 +44,7 @@ export default async function PricingPage() {
           {t("pricing.faqTitle")}
         </h2>
         <div className="divide-y divide-line-1 border-y border-line-1">
-          {FAQ.map((item) => (
+          {PRICING_FAQ.map((item) => (
             <details key={item.q} className="group">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[15px] font-medium [&::-webkit-details-marker]:hidden">
                 {t(item.q)}
@@ -76,6 +54,10 @@ export default async function PricingPage() {
             </details>
           ))}
         </div>
+
+        <Link href="/faq" className="self-start text-sm text-text-2 transition-colors duration-150 hover:text-text-1">
+          {t("pricing.moreQuestions")}
+        </Link>
 
         <div className="mt-4 flex items-center gap-4 text-sm">
           <span className="text-text-2">{t("pricing.ready")}</span>

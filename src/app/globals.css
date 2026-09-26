@@ -308,8 +308,8 @@
   color: transparent;
 }
 
-/* Pricing: a soft violet-to-pink glow under the highlighted plan's column. */
-@utility bg-plan-glow {
+/* A soft violet-to-pink glow fading down from the top edge: the highlighted plan, and the head of a text page. */
+@utility bg-top-glow {
   background-image: radial-gradient(
     70% 60% at 50% 0%,
     color-mix(in srgb, var(--color-brand-violet) 22%, transparent),
