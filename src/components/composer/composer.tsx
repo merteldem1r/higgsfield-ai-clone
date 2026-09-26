@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
 
 import { useApp } from "@/components/app-provider";
-import { AspectIcon, MinusIcon, PlusIcon, ReuseIcon, SparkleIcon, SpinnerIcon, WandIcon } from "@/components/icons";
+import { DotMeter } from "@/components/dot-meter";
+import { AspectIcon, MinusIcon, PlusIcon, SparkleIcon, SpinnerIcon, WandIcon } from "@/components/icons";
 import { useT } from "@/components/locale-provider";
 import {
   ASPECTS,
@@ -12,6 +13,7 @@ import {
   batchCost,
   DEFAULT_ASPECT,
   DEFAULT_MODEL,
+  FREE_CREDITS,
   MAX_PROMPT_LENGTH,
   MODELS,
   type AspectId,
@@ -29,7 +31,7 @@ export type ComposerHandle = {
   focus: () => void;
 };
 
-const MAX_TEXTAREA_PX = 110; // 5 lines at 22px
+const MAX_TEXTAREA_PX = 240; // 10 lines at 24px
 const COUNTER_FROM = MAX_PROMPT_LENGTH * 0.8;
 const IMPROVE_ERRORS = {
   IP_LIMIT: "composer.improveLimit",
@@ -56,17 +58,25 @@ const ASPECT_OPTIONS: ChipOption<AspectId>[] = (Object.keys(ASPECTS) as AspectId
   ),
 }));
 
+const TEXTAREA =
+  "field-sizing-content max-h-60 min-h-18 w-full resize-none text-base leading-6 wrap-break-word whitespace-pre-wrap";
+
+const STEP =
+  "flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-3 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent";
+
 type Props = {
   ref: Ref<ComposerHandle>;
   inFlight: boolean;
-  /** A blocking rejection (budget, IP limit, paused) happened; the thread explains it and Generate stays off. */
+  /** A blocking rejection (budget, IP limit, paused) happened; the notice explains it and Generate stays off. */
   blocked: boolean;
   onGenerate: (request: GenerateRequest) => Promise<boolean>;
-  /** Fixed over scrolling results (/image): a heavier shadow so content reads as passing underneath. */
-  docked?: boolean;
+  /** A rejection or lock, rendered under the prompt with its action. Cleared by the caller. */
+  notice?: ReactNode;
+  /** Called when the visitor edits the prompt, so a stale notice can be cleared. */
+  onEdit?: () => void;
 };
 
-export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }: Props) {
+export function Composer({ ref, inFlight, blocked, onGenerate, notice, onEdit }: Props) {
   const { credits, openAuthModal, showToast } = useApp();
   const t = useT();
   // Model names stay as written; only the one-line description is translated.
@@ -74,12 +84,7 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
     value: id,
     label: MODELS[id].label,
     description: t(`model.${id}.description`),
-    meta: (
-      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-text-2 tabular-nums">
-        <SparkleIcon className="size-3 text-accent" />
-        {MODELS[id].credits}
-      </span>
-    ),
+    meta: <span className="shrink-0 text-xs text-text-2 tabular-nums">{MODELS[id].credits}</span>,
   }));
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState<ModelId>(DEFAULT_MODEL);
@@ -87,32 +92,16 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
   const [batch, setBatch] = useState(BATCH_MIN);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [improving, setImproving] = useState(false);
-  // True while the improved prompt is typed into the textarea.
-  const [revealing, setRevealing] = useState(false);
   // What Undo restores. Cleared as soon as the text stops being the improver's output.
   const [original, setOriginal] = useState<string | null>(null);
   const [improveLimited, setImproveLimited] = useState(false);
   const improveAbort = useRef<AbortController | null>(null);
-  const revealFrame = useRef<number | null>(null);
 
-  function stopReveal() {
-    if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
-    revealFrame.current = null;
-    setRevealing(false);
-  }
-
-  useEffect(
-    () => () => {
-      improveAbort.current?.abort();
-      if (revealFrame.current !== null) cancelAnimationFrame(revealFrame.current);
-    },
-    [],
-  );
+  useEffect(() => () => improveAbort.current?.abort(), []);
 
   useImperativeHandle(ref, () => ({
     setPrompt: (untrimmed, select) => {
       const next = untrimmed.slice(0, MAX_PROMPT_LENGTH);
-      stopReveal();
       setOriginal(null);
       setPrompt(next);
       // After React commits the new value; preventScroll so callers own any scrolling.
@@ -143,9 +132,8 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
   const cost = batchCost(model, batch);
   const needsCredits = credits !== null && cost.credits > credits;
   const trimmed = prompt.trim();
-  const busyImproving = improving || revealing;
-  const disabled = inFlight || blocked || busyImproving || (!needsCredits && trimmed === "");
-  const canImprove = !inFlight && !busyImproving && !improveLimited && trimmed !== "";
+  const disabled = inFlight || blocked || improving || (!needsCredits && trimmed === "");
+  const canImprove = !inFlight && !improving && !improveLimited && trimmed !== "";
   const improveTitle = improveLimited
     ? t("composer.improveLimit")
     : trimmed === ""
@@ -157,31 +145,6 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
     if (!el) return;
     el.focus({ preventScroll: true });
     el.setSelectionRange(length, length);
-  }
-
-  // Types the new prompt in over well under a second, so the swap reads as a rewrite rather than a jump.
-  function reveal(text: string) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPrompt(text);
-      requestAnimationFrame(() => focusEnd(text.length));
-      return;
-    }
-    const duration = Math.min(900, 300 + text.length * 1.5);
-    const startedAt = performance.now();
-    setRevealing(true);
-    const step = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
-      const eased = 1 - (1 - progress) ** 3;
-      setPrompt(text.slice(0, Math.ceil(text.length * eased)));
-      if (progress < 1) {
-        revealFrame.current = requestAnimationFrame(step);
-      } else {
-        revealFrame.current = null;
-        setRevealing(false);
-        focusEnd(text.length);
-      }
-    };
-    revealFrame.current = requestAnimationFrame(step);
   }
 
   async function improve() {
@@ -206,13 +169,15 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
       showToast({ tone: "danger", text: t(key) });
       return;
     }
+    // The rewrite arrives whole, so it's shown whole: the dimmed textarea fading back is the only motion.
+    const next = outcome.prompt.slice(0, MAX_PROMPT_LENGTH);
     setOriginal(source);
-    reveal(outcome.prompt.slice(0, MAX_PROMPT_LENGTH));
+    setPrompt(next);
+    requestAnimationFrame(() => focusEnd(next.length));
   }
 
   function undo() {
     if (original === null) return;
-    stopReveal();
     setPrompt(original);
     setOriginal(null);
     requestAnimationFrame(() => focusEnd(original.length));
@@ -237,200 +202,181 @@ export function Composer({ ref, inFlight, blocked, onGenerate, docked = false }:
         e.preventDefault();
         submit();
       }}
-      className={`relative grid gap-3 rounded-2xl border bg-bg-2 p-3 sm:grid-cols-[1fr_auto] ${docked ? "shadow-dock" : "shadow-float"} sm:gap-4 sm:p-5 ${
-        inFlight ? "border-accent/30 motion-safe:animate-pulse-border" : "border-border-2"
-      }`}
+      className="flex flex-col gap-3 rounded-xl bg-bg-1 p-4 ring-1 ring-line-2"
     >
-      <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex items-start gap-3">
-          <button
-            type="button"
-            disabled={inFlight}
-            aria-label={t("composer.addReference")}
-            onClick={() => showToast({ tone: "neutral", text: t("composer.referenceSoon") })}
-            className="flex size-8 shrink-0 items-center justify-center rounded-md bg-bg-3 text-text-1 transition-colors duration-150 hover:bg-bg-5 disabled:pointer-events-none disabled:opacity-50"
+      <label htmlFor="prompt" className="sr-only">
+        {t("composer.prompt")}
+      </label>
+      <div className="relative">
+        <textarea
+          id="prompt"
+          ref={textareaRef}
+          value={prompt}
+          readOnly={improving}
+          aria-busy={improving}
+          onChange={(e) => {
+            setPrompt(e.target.value);
+            setOriginal(null);
+            onEdit?.();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          onPaste={(e) => {
+            const el = e.currentTarget;
+            const replaced = el.selectionEnd - el.selectionStart;
+            const after = el.value.length - replaced + e.clipboardData.getData("text").length;
+            // maxLength cuts the paste silently; say so, or the missing tail looks like a bug.
+            if (after > MAX_PROMPT_LENGTH) {
+              showToast({ tone: "neutral", text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }) });
+            }
+          }}
+          rows={3}
+          maxLength={MAX_PROMPT_LENGTH}
+          aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
+          placeholder={t("composer.placeholder")}
+          className={`${TEXTAREA} bg-transparent text-text-1 outline-none transition-colors duration-200 placeholder:text-text-placeholder ${
+            improving ? "text-transparent" : ""
+          }`}
+        />
+        {/* While the rewrite is in flight the words themselves carry the motion: a mirror of the text, laid over
+            the (now transparent) textarea, with a brand band sweeping through it. Static grey under reduced motion. */}
+        {improving && (
+          <div
+            aria-hidden
+            className={`${TEXTAREA} pointer-events-none absolute inset-0 overflow-hidden text-sweep motion-safe:animate-sweep`}
           >
-            <PlusIcon className="size-4" />
-          </button>
-          <button
-            type="button"
-            disabled={!canImprove}
-            aria-label={t("composer.improve")}
-            aria-busy={improving}
-            title={improveTitle}
-            onClick={() => void improve()}
-            className={`group relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-bg-3 text-text-1 transition-colors duration-150 hover:bg-bg-5 ${
-              busyImproving ? "" : "disabled:opacity-50"
-            }`}
-          >
-            {improving && (
-              <>
-                {/* A brand-colored ring orbiting the button edge; the inner plate masks all but 1.5px of it. */}
-                <span aria-hidden className="absolute -inset-2 bg-brand-conic motion-safe:animate-orbit" />
-                <span aria-hidden className="absolute inset-[1.5px] rounded-[8.5px] bg-bg-3" />
-              </>
-            )}
-            {busyImproving ? (
-              <SparkleIcon gradient className="relative size-4 motion-safe:animate-breathe" />
-            ) : (
-              <WandIcon className="relative size-4 transition-[rotate,color] duration-200 group-enabled:group-hover:text-accent motion-safe:group-enabled:group-hover:-rotate-12" />
-            )}
-          </button>
-          <label htmlFor="prompt" className="sr-only">
-            {t("composer.prompt")}
-          </label>
-          <div className="relative flex min-w-0 flex-1">
-            <textarea
-              id="prompt"
-              ref={textareaRef}
-              value={prompt}
-              readOnly={busyImproving}
-              aria-busy={busyImproving}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-                setOriginal(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  submit();
-                }
-              }}
-              onPaste={(e) => {
-                const el = e.currentTarget;
-                const replaced = el.selectionEnd - el.selectionStart;
-                const after = el.value.length - replaced + e.clipboardData.getData("text").length;
-                // maxLength cuts the paste silently; say so, or the missing tail looks like a bug.
-                if (after > MAX_PROMPT_LENGTH) {
-                  showToast({
-                    tone: "neutral",
-                    text: t("composer.trimmed", { n: MAX_PROMPT_LENGTH }),
-                  });
-                }
-              }}
-              rows={1}
-              maxLength={MAX_PROMPT_LENGTH}
-              aria-describedby={prompt.length >= COUNTER_FROM ? "prompt-count" : undefined}
-              placeholder={t("composer.placeholder")}
-              className={`field-sizing-content max-h-27.5 min-h-8 flex-1 resize-none bg-transparent py-1.25 text-[15px] leading-5.5 text-text-1 outline-none transition-opacity duration-200 placeholder:text-text-placeholder ${
-                improving ? "opacity-40" : ""
-              }`}
-            />
-            {improving && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-sm shimmer-brand motion-safe:animate-shimmer-fast motion-reduce:hidden"
-              />
-            )}
+            {prompt}
           </div>
+        )}
+      </div>
+
+      {(original !== null || prompt.length >= COUNTER_FROM || improving) && (
+        <div className="-mt-1 flex items-center gap-3 text-xs text-text-2">
+          <span className="sr-only" aria-live="polite">
+            {improving ? t("composer.improving") : original !== null ? t("composer.improved") : ""}
+          </span>
+          {improving && <span aria-hidden>{t("composer.improving")}</span>}
+          {/* A second rewrite in flight hides the previous Undo: it would restore text the new result is about to replace. */}
+          {original !== null && !improving && (
+            <>
+              <span aria-hidden>{t("composer.improved")}</span>
+              <button
+                type="button"
+                onClick={undo}
+                className="font-medium text-text-1 transition-colors duration-150 hover:text-accent-text"
+              >
+                {t("composer.undo")}
+                <span className="sr-only"> {t("composer.undoSr")}</span>
+              </button>
+            </>
+          )}
           {prompt.length >= COUNTER_FROM && (
             <span
               id="prompt-count"
-              className={`shrink-0 self-end pb-1.5 text-xs font-medium tabular-nums ${
-                prompt.length >= MAX_PROMPT_LENGTH ? "text-danger" : "text-text-3"
-              }`}
+              className={`ml-auto tabular-nums ${prompt.length >= MAX_PROMPT_LENGTH ? "text-danger" : "text-text-3"}`}
             >
               {prompt.length}/{MAX_PROMPT_LENGTH}
             </span>
           )}
         </div>
+      )}
 
-        <span className="sr-only" aria-live="polite">
-          {improving ? t("composer.improving") : original !== null ? t("composer.improved") : ""}
-        </span>
+      {notice}
 
-        <div className="-mx-3 flex gap-2 overflow-x-auto overscroll-x-contain pl-3 scrollbar-none sm:mx-0 sm:overflow-visible sm:pl-0">
-          {original !== null && (
-            <button
-              type="button"
-              onClick={undo}
-              disabled={revealing}
-              className={`${CHIP_CLASS} border-accent/40 motion-safe:animate-pop-in`}
-            >
-              <SparkleIcon gradient className="size-3.5" />
-              <span className="text-text-2">{t("composer.improved")}</span>
-              <span aria-hidden className="h-3.5 w-px bg-border-3" />
-              <ReuseIcon className="size-3.5" />
-              {t("composer.undo")}
-              <span className="sr-only">{t("composer.undoSr")}</span>
-            </button>
-          )}
-          <ChipMenu
-            label={t("composer.model")}
-            icon={<SparkleIcon gradient />}
-            options={modelOptions}
-            value={model}
-            onChange={setModel}
-            disabled={inFlight}
-          />
-          <ChipMenu
-            label={t("composer.aspect")}
-            icon={<AspectIcon />}
-            options={ASPECT_OPTIONS}
-            value={aspect}
-            onChange={setAspect}
-            disabled={inFlight}
-          />
-          <div
-            role="group"
-            aria-label={t("composer.count")}
-            className={`${CHIP_CLASS} gap-1 px-1.5 hover:bg-chip ${inFlight ? "pointer-events-none opacity-50" : ""}`}
+      <div className="flex flex-wrap items-center gap-2">
+        <ChipMenu
+          label={t("composer.model")}
+          icon={<SparkleIcon />}
+          options={modelOptions}
+          value={model}
+          onChange={setModel}
+          disabled={inFlight}
+        />
+        <ChipMenu
+          label={t("composer.aspect")}
+          icon={<AspectIcon />}
+          options={ASPECT_OPTIONS}
+          value={aspect}
+          onChange={setAspect}
+          disabled={inFlight}
+        />
+        <div
+          role="group"
+          aria-label={t("composer.count")}
+          className={`${CHIP_CLASS} gap-1 px-1.5 hover:bg-bg-2 ${inFlight ? "pointer-events-none opacity-50" : ""}`}
+        >
+          <button
+            type="button"
+            aria-label={t("composer.fewer")}
+            disabled={inFlight || batch <= BATCH_MIN}
+            onClick={() => setBatch((b) => Math.max(BATCH_MIN, b - 1))}
+            className={STEP}
           >
-            <button
-              type="button"
-              aria-label={t("composer.fewer")}
-              disabled={inFlight || batch <= BATCH_MIN}
-              onClick={() => setBatch((b) => Math.max(BATCH_MIN, b - 1))}
-              className="flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent"
-            >
-              <MinusIcon className="size-3.5" />
-            </button>
-            <span className="min-w-7 text-center tabular-nums" aria-live="polite">
-              {batch}/{BATCH_MAX}
-            </span>
-            <button
-              type="button"
-              aria-label={t("composer.more")}
-              disabled={inFlight || batch >= BATCH_MAX}
-              onClick={() => setBatch((b) => Math.min(BATCH_MAX, b + 1))}
-              className="flex size-7 items-center justify-center rounded-sm text-text-2 transition-colors duration-150 hover:bg-bg-5 hover:text-text-1 disabled:text-text-disabled disabled:hover:bg-transparent"
-            >
-              <PlusIcon className="size-3.5" />
-            </button>
-          </div>
-          {/* Fades chips out at the right edge so the row reads as scrollable, and doubles as its end padding.
-              Not a mask on the row: that would also fade the chip menus, which render inside it. */}
-          <span
-            aria-hidden
-            className="pointer-events-none sticky right-0 -ml-2 w-10 shrink-0 bg-linear-to-l from-bg-2 to-transparent sm:hidden"
-          />
+            <MinusIcon className="size-3.5" />
+          </button>
+          <span className="min-w-16 text-center tabular-nums" aria-live="polite">
+            {t("composer.images", { n: batch })}
+          </span>
+          <button
+            type="button"
+            aria-label={t("composer.more")}
+            disabled={inFlight || batch >= BATCH_MAX}
+            onClick={() => setBatch((b) => Math.min(BATCH_MAX, b + 1))}
+            className={STEP}
+          >
+            <PlusIcon className="size-3.5" />
+          </button>
         </div>
+
+        <button
+          type="button"
+          disabled={!canImprove}
+          aria-label={t("composer.improve")}
+          aria-busy={improving}
+          title={improveTitle}
+          onClick={() => void improve()}
+          className="relative ml-auto flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-bg-2 text-text-1 transition-colors duration-150 hover:bg-bg-3 disabled:opacity-50"
+        >
+          {improving && (
+            <>
+              {/* A brand ring orbiting the button's edge; the inner plate masks all but 1.5px of it. */}
+              <span aria-hidden className="absolute -inset-2 bg-brand-conic motion-safe:animate-orbit" />
+              <span aria-hidden className="absolute inset-[1.5px] rounded-[6.5px] bg-bg-2" />
+            </>
+          )}
+          <WandIcon className={`relative size-4 ${improving ? "motion-safe:animate-breathe" : ""}`} />
+        </button>
+
+        <button
+          type="submit"
+          disabled={disabled}
+          className="flex h-10 items-center justify-center gap-2 rounded-md bg-brand-gradient px-4 text-sm font-semibold whitespace-nowrap text-accent-ink transition-[filter] duration-150 enabled:hover:brightness-110 disabled:bg-brand-gradient-muted disabled:text-accent-ink/70 max-sm:w-full"
+        >
+          {inFlight ? (
+            <>
+              <SpinnerIcon className="size-4 motion-safe:animate-spin" />
+              {t("composer.generating")}
+            </>
+          ) : needsCredits ? (
+            t("composer.getCredits")
+          ) : (
+            <>
+              {t("composer.generate")}
+              <span className="font-medium tabular-nums opacity-80">{t("credits.count", { n: cost.credits })}</span>
+            </>
+          )}
+        </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={disabled}
-        className="flex h-13 items-center justify-center gap-2 rounded-xl bg-brand-gradient px-5 text-base font-semibold whitespace-nowrap text-accent-ink inset-shadow-lip shadow-brand-glow-soft transition-[filter,translate,box-shadow] duration-150 enabled:hover:shadow-brand-glow enabled:hover:brightness-110 enabled:motion-safe:hover:-translate-y-0.5 enabled:active:translate-y-px enabled:active:inset-shadow-lip-pressed disabled:bg-brand-gradient-muted disabled:text-accent-ink/70 disabled:shadow-none disabled:inset-shadow-none sm:h-20.5 sm:w-43.5"
-      >
-        {inFlight ? (
-          <>
-            <SpinnerIcon className="size-4 motion-safe:animate-spin" />
-            {t("composer.generating")}
-          </>
-        ) : needsCredits ? (
-          t("composer.getCredits")
-        ) : (
-          <>
-            {t("composer.generate")}
-            <SparkleIcon className="size-3.5" />
-            <span className="tabular-nums">
-              <s aria-hidden className="font-semibold opacity-50">{cost.listCredits}</s>{" "}
-              <span className="font-bold">{cost.credits}</span>
-              <span className="sr-only">{t("composer.creditsSr")}</span>
-            </span>
-          </>
-        )}
-      </button>
+      {/* The balance where the spend is felt: the dots tick down when the server confirms a run. */}
+      <div className="flex items-center gap-3 text-xs text-text-2">
+        <span className="tabular-nums">{credits === null ? t("credits.label") : t("credits.count", { n: credits })}</span>
+        <DotMeter value={credits ?? FREE_CREDITS} className="w-full max-w-60" />
+      </div>
     </form>
   );
 }

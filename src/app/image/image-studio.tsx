@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { useApp } from "@/components/app-provider";
 import { Composer, type ComposerHandle } from "@/components/composer/composer";
@@ -11,23 +12,28 @@ import {
   takeStashedGeneration,
 } from "@/components/composer/handoff";
 import { useFavourite } from "@/components/favourite-button";
-import { SparkleIcon } from "@/components/icons";
-import { useT } from "@/components/locale-provider";
-import { DEFAULT_ASPECT, isAspectId, isModelId } from "@/lib/credits";
+import { AlertIcon } from "@/components/icons";
+import { useLocale } from "@/components/locale-provider";
+import { MadeHereGrid } from "@/components/made-here-grid";
+import { PresetStrip } from "@/components/preset-strip";
+import { DEFAULT_ASPECT, FREE_CREDITS, isAspectId, isModelId, UPGRADE_BONUS } from "@/lib/credits";
 import type { MessageKey } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 
 import { AmbientBackground } from "./ambient-background";
-import { ChatThread } from "./chat-thread";
+import { rejectionLine } from "./assistant-lines";
 import { requestGeneration } from "./request-generation";
-import type { GenerateRequest, Run } from "./types";
+import { RunList } from "./run-list";
+import type { GenerateRequest, Rejection, Run } from "./types";
 
 const BUCKET = "generations";
 const HISTORY_LIMIT = 40;
 
 // Rejections that will fail again for everyone on this network/deployment until something changes, so the
-// composer locks after one. The assistant explains why in the thread (assistant-lines.ts).
+// composer locks after one. The notice explains why.
 const BLOCKING = new Set(["GLOBAL_CAP", "IP_LIMIT", "FAL_DISABLED"]);
+// Rejections the visitor can simply retry. The others (budget, IP limit) can't succeed today.
+const RETRYABLE = new Set(["FAL_DISABLED", "NETWORK", "UNKNOWN", "INTERNAL", "INVALID_INPUT"]);
 
 // Labels are translated; the prompts they load stay in English, like any prompt.
 const STARTERS: { label: MessageKey; prompt: string }[] = [
@@ -89,18 +95,19 @@ async function loadHistory(): Promise<Run[]> {
   });
 }
 
-export function ImageStudio({ hero }: { hero: ReactNode }) {
-  const { refreshCredits, setCredits, openAuthModal } = useApp();
-  const t = useT();
+export function ImageStudio() {
+  const router = useRouter();
+  const { account, refreshCredits, setCredits, openAuthModal } = useApp();
+  const { locale, t } = useLocale();
   const [runs, setRuns] = useState<Run[]>([]);
   const [inFlight, setInFlight] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [rejection, setRejection] = useState<Rejection | null>(null);
   // The refs are the real locks: state updates are async, so a double click could slip past `inFlight`.
   const lock = useRef(false);
   const blockedRef = useRef(false);
   const composerRef = useRef<ComposerHandle>(null);
-  // Set before a runs update that should end with the page scrolled to the newest run (the bottom).
-  const scrollToNewest = useRef<ScrollBehavior | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
   // The arrival effect below runs once, so it calls generate through this ref to get the current one.
   const latestGenerate = useRef<((request: GenerateRequest) => Promise<boolean>) | null>(null);
 
@@ -109,7 +116,6 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     loadHistory()
       .then((history) => {
         if (cancelled) return;
-        if (history.length > 0) scrollToNewest.current = "instant";
         // runs is newest-first; runs started before history arrived stay the newest.
         setRuns((current) => [...current, ...history.filter((h) => !current.some((c) => c.id === h.id))]);
       })
@@ -118,12 +124,6 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (!scrollToNewest.current) return;
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: scrollToNewest.current });
-    scrollToNewest.current = null;
-  }, [runs]);
 
   const setFavourite = useFavourite((assetId, favourite) =>
     setRuns((current) =>
@@ -138,40 +138,41 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
   const updateRun = (id: string, patch: Partial<Run>) =>
     setRuns((current) => current.map((run) => (run.id === id ? { ...run, ...patch } : run)));
 
+  // The composer and the newest frame live at the top; a run started from further down brings them into view.
+  function scrollToTop() {
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    topRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  }
+
   async function generate(request: GenerateRequest): Promise<boolean> {
     if (lock.current || blockedRef.current) return false;
     lock.current = true;
     setInFlight(true);
+    setRejection(null);
 
-    // The turn goes up before sign-in or the API: the first generation is the slowest path in the app.
+    // The frame goes up before sign-in or the API: the first generation is the slowest path in the app.
     const id = crypto.randomUUID();
-    scrollToNewest.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
-    setRuns((current) => [
-      { id, request, status: "pending", live: true, startedAt: Date.now(), images: [] },
-      ...current,
-    ]);
+    setRuns((current) => [{ id, request, status: "pending", live: true, startedAt: Date.now(), images: [] }, ...current]);
+    scrollToTop();
 
     try {
       const outcome = await requestGeneration(request);
       if (outcome.ok) {
-        updateRun(id, {
-          status: "done",
-          images: outcome.images,
-          creditsLeft: outcome.credits,
-          completedAt: Date.now(),
-        });
+        updateRun(id, { status: "done", images: outcome.images, completedAt: Date.now() });
         setCredits(outcome.credits);
         return true;
       }
 
       const { code, message } = outcome;
       if (code === "PROVIDER_ERROR") {
+        // Charged and refunded: a real run, so it stays in the sheet as a failed frame.
         updateRun(id, { status: "failed", completedAt: Date.now() });
         return false;
       }
 
-      // Every other code was rejected before any spend; the assistant explains it in the thread.
-      updateRun(id, { status: "rejected", completedAt: Date.now(), rejection: { code, message } });
+      // Every other code was rejected before any spend. It isn't a run: the frame goes and the composer explains.
+      setRuns((current) => current.filter((run) => run.id !== id));
+      setRejection({ code, message, request });
       if (code === "INSUFFICIENT_CREDITS") {
         openAuthModal("out-of-credits");
         void refreshCredits();
@@ -183,11 +184,8 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
       return false;
     } catch (err) {
       console.error("Generation request failed", err);
-      updateRun(id, {
-        status: "rejected",
-        completedAt: Date.now(),
-        rejection: { code: "NETWORK", message: err instanceof Error ? err.message : String(err) },
-      });
+      setRuns((current) => current.filter((run) => run.id !== id));
+      setRejection({ code: "NETWORK", message: err instanceof Error ? err.message : String(err), request });
       return false;
     } finally {
       lock.current = false;
@@ -206,7 +204,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     const model = params.get("model");
     if (isModelId(model)) composerRef.current?.setSettings({ model });
 
-    // The mobile Create tab. Dropped from the URL so a refresh doesn't refocus.
+    // Dropped from the URL so a refresh doesn't refocus.
     if (params.has(FOCUS_PARAM)) {
       composerRef.current?.focus();
       params.delete(FOCUS_PARAM);
@@ -214,7 +212,7 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
       window.history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
     }
 
-    // A Reuse from /assets: fill the composer and stop there. Only a click on Generate spends.
+    // A Reuse from the gallery or community: fill the composer and stop there. Only a click on Generate spends.
     const draft = takeStashedDraft();
     if (draft) {
       const { prompt, ...settings } = draft;
@@ -234,66 +232,122 @@ export function ImageStudio({ hero }: { hero: ReactNode }) {
     return () => window.removeEventListener(FOCUS_COMPOSER_EVENT, focus);
   }, []);
 
-  // The failed or rejected turn stays in the thread as a record; the retry is a new turn below it.
+  // A pause is the one block a retry is meant to probe; the server says again if it's still on.
+  function unblockIfPaused(code: string | undefined) {
+    if (code !== "FAL_DISABLED") return;
+    blockedRef.current = false;
+    setBlocked(false);
+  }
+
+  // The failed frame stays as a record and collapses; the retry is a new run above it.
   function retryRun(run: Run) {
-    // A pause is the one block a retry is meant to probe; the server says again if it's still on.
-    if (run.rejection?.code === "FAL_DISABLED") {
-      blockedRef.current = false;
-      setBlocked(false);
-    }
+    updateRun(run.id, { retried: true });
     void generate(run.request);
   }
 
-  function loadIntoComposer({ prompt, ...settings }: GenerateRequest) {
-    composerRef.current?.setSettings(settings);
-    composerRef.current?.setPrompt(prompt);
+  function retryRejected() {
+    if (!rejection) return;
+    unblockIfPaused(rejection.code);
+    void generate(rejection.request);
   }
+
+  function loadIntoComposer({ prompt, ...settings }: GenerateRequest, select?: [number, number]) {
+    composerRef.current?.setSettings(settings);
+    composerRef.current?.setPrompt(prompt, select);
+    scrollToTop();
+  }
+
+  const member = account?.status === "member";
+  const notice = rejection && (
+    <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md bg-bg-2 px-3 py-2.5 text-sm">
+      <AlertIcon className={`size-4 shrink-0 ${BLOCKING.has(rejection.code) ? "text-text-2" : "text-danger"}`} />
+      <p className="min-w-0 flex-1 text-text-1">
+        {rejectionLine(rejection.code, rejection.message, rejection.request, locale, t, member)}
+      </p>
+      {rejection.code === "INSUFFICIENT_CREDITS" && (
+        <button
+          type="button"
+          onClick={() => (member ? router.push("/pricing") : openAuthModal("signup"))}
+          className="shrink-0 font-medium text-accent-text transition-colors duration-150 hover:text-text-1"
+        >
+          {member ? t("thread.seePlans") : t("thread.signUpFor", { n: UPGRADE_BONUS })}
+        </button>
+      )}
+      {RETRYABLE.has(rejection.code) && (
+        <button
+          type="button"
+          onClick={retryRejected}
+          disabled={inFlight}
+          className="shrink-0 font-medium text-accent-text transition-colors duration-150 hover:text-text-1 disabled:text-text-disabled"
+        >
+          {t("thread.tryAgain")}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <>
       <AmbientBackground active={inFlight} />
-      {/* max-w-288 minus px-4 is 1120px: the thread shares the composer's column exactly. */}
-      <main className="mx-auto flex w-full max-w-288 flex-1 flex-col px-4 pt-6 pb-72 sm:pb-48">
+      <main className="mx-auto flex w-full max-w-[calc(880px+2rem)] flex-1 flex-col px-4 pt-6 pb-24">
+        <div ref={topRef} className="scroll-mt-20">
+          <Composer
+            ref={composerRef}
+            inFlight={inFlight}
+            blocked={blocked}
+            onGenerate={generate}
+            notice={notice}
+            onEdit={() => {
+              if (rejection && !BLOCKING.has(rejection.code)) setRejection(null);
+            }}
+          />
+        </div>
+
         {runs.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-8 py-10">
-            {hero}
-            <ul aria-label={t("image.starters")} className="flex flex-wrap justify-center gap-2">
-              {STARTERS.map((starter) => (
-                <li key={starter.label}>
-                  <button
-                    type="button"
-                    onClick={() => composerRef.current?.setPrompt(starter.prompt)}
-                    className="flex h-9 items-center gap-2 rounded-full border border-border-3 bg-bg-1 px-3.5 text-sm font-medium text-text-2 transition-colors duration-150 hover:border-accent/50 hover:bg-bg-3 hover:text-text-1"
-                  >
-                    <SparkleIcon gradient className="size-3.5" />
-                    {t(starter.label)}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-6 flex flex-col gap-12">
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-text-2">{t("image.empty", { n: FREE_CREDITS })}</p>
+              <ul aria-label={t("image.starters")} className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {STARTERS.map((starter) => (
+                  <li key={starter.label}>
+                    <button
+                      type="button"
+                      onClick={() => composerRef.current?.setPrompt(starter.prompt)}
+                      className="rounded-sm text-text-1 underline decoration-line-2 underline-offset-4 transition-colors duration-150 hover:decoration-text-2"
+                    >
+                      {t(starter.label)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <section aria-labelledby="presets-title" className="flex flex-col gap-4">
+              <h2 id="presets-title" className="text-h3 font-medium">
+                {t("home.presetsTitle")}
+              </h2>
+              <PresetStrip onPick={(prompt, select) => loadIntoComposer({ prompt, model: "flux-schnell", aspect: DEFAULT_ASPECT, batch: 1 }, select)} />
+            </section>
+            <section aria-labelledby="made-title" className="flex flex-col gap-4">
+              <h2 id="made-title" className="text-h3 font-medium">
+                {t("home.showcaseTitle")}
+              </h2>
+              <MadeHereGrid onRecreate={(prompt, { aspect }) => loadIntoComposer({ prompt, model: "flux-dev", aspect, batch: 1 })} />
+            </section>
           </div>
         ) : (
-          <ChatThread
-            runs={runs}
-            onLoad={loadIntoComposer}
-            onRetry={retryRun}
-            onFavourite={(image, favourite) => {
-              if (image.id) void setFavourite(image.id, favourite, image.favourite);
-            }}
-            onSignUp={() => openAuthModal("signup")}
-            retryDisabled={inFlight || blocked}
-          />
+          <div className="mt-10 flex flex-col">
+            <RunList
+              runs={runs}
+              onLoad={(request) => loadIntoComposer(request)}
+              onRetry={retryRun}
+              onFavourite={(image, favourite) => {
+                if (image.id) void setFavourite(image.id, favourite, image.favourite);
+              }}
+              retryDisabled={inFlight || blocked}
+            />
+          </div>
         )}
       </main>
-
-      {/* Results fade into the page color behind the composer instead of cutting off hard at its edge. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-[calc(15rem+var(--tabbar-h))] bg-linear-to-t from-bg-0 via-bg-0/85 to-transparent sm:h-[calc(11rem+var(--tabbar-h))]"
-      />
-      <div className="fixed inset-x-4 bottom-[calc(1rem+var(--tabbar-h))] z-30 mx-auto max-w-280 sm:bottom-[calc(1.25rem+var(--tabbar-h))]">
-        <Composer ref={composerRef} inFlight={inFlight} blocked={blocked} onGenerate={generate} docked />
-      </div>
     </>
   );
 }

@@ -7,7 +7,7 @@ import { useT } from "@/components/locale-provider";
 
 import { useHomeComposer } from "./home-composer";
 import { Reveal } from "./reveal";
-import { SHOWCASE } from "./showcase";
+import { SHOWCASE } from "@/components/showcase";
 
 export function ShowcaseGrid() {
   const t = useT();

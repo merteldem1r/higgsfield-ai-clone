@@ -8,12 +8,13 @@ export type ChipOption<T extends string> = {
   value: T;
   label: string;
   description?: string;
+  /** Shown after the label in the menu and inside the closed chip (e.g. a credit cost). */
   meta?: ReactNode;
   icon?: ReactNode;
 };
 
 export const CHIP_CLASS =
-  "flex h-9.5 shrink-0 items-center gap-2 rounded-md border border-white/6 bg-chip px-3 text-sm font-medium text-text-1 transition-colors duration-150 hover:bg-bg-5 disabled:pointer-events-none disabled:opacity-50";
+  "flex h-9 shrink-0 items-center gap-2 rounded-md bg-bg-2 px-3 text-sm font-medium text-text-1 transition-colors duration-150 hover:bg-bg-3 disabled:pointer-events-none disabled:opacity-50";
 
 type Props<T extends string> = {
   label: string;
@@ -30,7 +31,7 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
   const chipRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
-  // Going in flight closes the menu for good: the settings now belong to the pending tile.
+  // Going in flight closes the menu for good: the settings now belong to the pending frame.
   if (disabled && open) setOpen(false);
   const shown = open && !disabled;
   const selected = options.find((o) => o.value === value);
@@ -61,8 +62,7 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
   }
 
   return (
-    // Static below sm: the chip row scrolls horizontally there, so the menu anchors to the composer instead.
-    <div ref={wrapperRef} className="shrink-0 sm:relative">
+    <div ref={wrapperRef} className="relative shrink-0">
       <button
         ref={chipRef}
         type="button"
@@ -72,11 +72,12 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
         aria-controls={menuId}
         aria-label={`${label}: ${selected?.label ?? value}`}
         onClick={() => setOpen((o) => !o)}
-        className={`${CHIP_CLASS} ${shown ? "border-accent/40" : ""}`}
+        className={`${CHIP_CLASS} ${shown ? "bg-bg-3" : ""}`}
       >
         <span className="size-4 text-text-2 [&>svg]:size-4">{icon}</span>
         {selected?.label ?? value}
-        <ChevronUpIcon className={`size-3.5 text-text-2 transition-transform duration-150 ${shown ? "" : "rotate-180"}`} />
+        {selected?.meta}
+        <ChevronUpIcon className={`size-3.5 text-text-2 transition-transform duration-150 ${shown ? "rotate-180" : ""}`} />
       </button>
 
       {shown && (
@@ -86,7 +87,7 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKeyDown}
-          className="absolute inset-x-0 bottom-full z-10 mb-2 rounded-lg border border-border-3 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in motion-reduce:animate-fade-in sm:right-auto sm:w-72"
+          className="absolute top-full left-0 z-10 mt-2 w-72 rounded-lg border border-line-2 bg-bg-1 p-1.5 shadow-float motion-safe:animate-pop-in motion-reduce:animate-fade-in"
         >
           {options.map((option) => {
             const checked = option.value === value;
@@ -101,7 +102,7 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
                   setOpen(false);
                   chipRef.current?.focus();
                 }}
-                className="flex min-h-10 w-full items-center gap-3 rounded-md px-2.5 py-1.5 text-left transition-colors duration-150 outline-none hover:bg-bg-3 focus-visible:bg-bg-3"
+                className="flex min-h-10 w-full items-center gap-3 rounded-md px-2.5 py-1.5 text-left transition-colors duration-150 outline-none hover:bg-bg-2 focus-visible:bg-bg-2"
               >
                 {option.icon && <span className="text-text-2">{option.icon}</span>}
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -109,7 +110,7 @@ export function ChipMenu<T extends string>({ label, icon, options, value, onChan
                   {option.description && <span className="text-xs text-text-2">{option.description}</span>}
                 </span>
                 {option.meta}
-                <CheckIcon className={`size-4 shrink-0 text-accent-text ${checked ? "" : "invisible"}`} />
+                <CheckIcon className={`size-4 shrink-0 ${checked ? "" : "invisible"}`} />
               </button>
             );
           })}

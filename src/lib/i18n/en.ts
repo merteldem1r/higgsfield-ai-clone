@@ -35,8 +35,6 @@ export const en = {
   "footer.source": "Source",
 
   // Composer
-  "composer.addReference": "Add reference image",
-  "composer.referenceSoon": "Reference images are coming soon.",
   "composer.prompt": "Prompt",
   "composer.placeholder": "Describe the scene you imagine",
   "composer.trimmed": "Prompt trimmed to {n} characters.",
@@ -118,15 +116,11 @@ export const en = {
   "authModal.back": "Back to where I was",
 
   // /image: hero, starters, thread, assistant lines, tiles
-  "image.heroTop": "Start creating with",
-  "image.heroAccent": "real AI images",
-  "image.heroText": "Describe a scene, character, mood, or style — and watch it come to life. {n} free credits, no signup.",
   "image.starters": "Try one of these",
   "image.starter.lighthouse": "Lighthouse under the Milky Way",
   "image.starter.alley": "Rainy neon alley",
   "image.starter.glass": "Glass house in the snow",
-  "thread.label": "Conversation",
-  "thread.images": "{n} images",
+  "thread.label": "Runs",
   "thread.reuseTitle": "Load this prompt and its settings into the composer",
   "thread.reuse": "Reuse",
   "thread.seePlans": "See plans",
@@ -142,12 +136,6 @@ export const en = {
   "assistant.takes.many": "{n} takes",
   "assistant.intro": "On it. Rendering {takes} at {aspect} with {model}.",
   "assistant.failed": "{model} couldn't finish this one. Your {cost} credits are back.",
-  "assistant.done": "Done in {time}.",
-  "assistant.doneNoTime": "Done.",
-  "assistant.spent": "That used {cost} credits.",
-  "assistant.spentLast": "That used {cost} credits, the last of your balance.",
-  "assistant.spentLeft": "That used {cost} credits. You have {left} left.",
-  "assistant.nudge": "Want a variation?",
   "assistant.reject.creditsMember":
     "This needs {cost} credits, more than you have left. A plan tops you up; your images stay right here.",
   "assistant.reject.creditsGuest":
@@ -317,6 +305,15 @@ export const en = {
   "assistant.err.session": "your session expired. Reload the page to start a new one.",
   "assistant.err.invalid": "the request didn't pass validation.",
   "assistant.err.internal": "something went wrong on our side.",
+  "thread.today": "Today",
+  "thread.yesterday": "Yesterday",
+  "thread.showEarlier": "Show earlier ({n} more)",
+  "run.time": "Time",
+  "run.status": "Status",
+  "run.took": "Time taken",
+  "run.cost": "Cost",
+  "composer.images": "{n} {n|one:image|other:images}",
+  "image.empty": "Describe a scene and a real image comes back in seconds. {n} free credits, no signup.",
 } as const;
 
 export type MessageKey = keyof typeof en;

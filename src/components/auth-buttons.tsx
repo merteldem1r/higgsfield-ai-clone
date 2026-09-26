@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
-import { FREE_CREDITS, MODELS, UPGRADE_BONUS } from "@/lib/credits";
+import { MODELS } from "@/lib/credits";
 import { logOut } from "@/lib/supabase/session";
 
 import { LOCALE_NAMES, LOCALES } from "@/lib/i18n";
 
 import { useApp } from "./app-provider";
+import { DotMeter } from "./dot-meter";
 import {
   BoxIcon,
-  BrandGradient,
   CheckIcon,
   ChevronRightIcon,
   GlobeIcon,
@@ -22,9 +22,6 @@ import {
 } from "./icons";
 import { useLocale, useT } from "./locale-provider";
 
-// One dot per credit of a new member's starting balance (free credits + the upgrade bonus).
-const METER_DOTS = FREE_CREDITS + UPGRADE_BONUS;
-const DOT_PITCH = 9;
 // Long enough to cross the gap from the avatar into the card without it closing.
 const CLOSE_DELAY_MS = 150;
 
@@ -177,7 +174,7 @@ function AccountMenu({ email, handle }: { email: string; handle: string | null }
                   <ChevronRightIcon className="size-4" />
                 </span>
               </span>
-              <DotMeter value={credits ?? 0} />
+              <DotMeter value={credits ?? 0} className="mt-3 w-full" />
             </Link>
 
             <div className="mt-1.5 flex flex-col">
@@ -267,28 +264,5 @@ function MenuLink({
       {icon}
       {children}
     </Link>
-  );
-}
-
-// Filled dots share one gradient across the whole row, so a full meter reads as the logo's colours left to right.
-function DotMeter({ value }: { value: number }) {
-  const id = useId();
-  const width = METER_DOTS * DOT_PITCH;
-  return (
-    <svg aria-hidden viewBox={`0 0 ${width} ${DOT_PITCH}`} className="mt-3 block h-auto w-full">
-      <defs>
-        <BrandGradient id={id} x1={0} x2={width} y={DOT_PITCH / 2} />
-      </defs>
-      {Array.from({ length: METER_DOTS }, (_, i) => (
-        <circle
-          key={i}
-          cx={i * DOT_PITCH + DOT_PITCH / 2}
-          cy={DOT_PITCH / 2}
-          r={2.75}
-          fill={i < value ? `url(#${id})` : undefined}
-          className={i < value ? undefined : "fill-bg-3"}
-        />
-      ))}
-    </svg>
   );
 }

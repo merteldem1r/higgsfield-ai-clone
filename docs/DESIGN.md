@@ -2,7 +2,7 @@
 
 **Darkroom.** A studio, not a storefront. Every page is one column; the composer sits at the top of it and the newest work directly beneath, so the prompt and the picture it made are always on screen together. Images are the only saturated colour. The chrome is a warm near-black whose surfaces are separated by spacing and one tone step, not by boxes. The logo gradient is spent in exactly two places: the Generate action, and whatever is live right now (the generating tile, the caret, the credits while they change). No uppercase, no gradient words, no badges. The voice is the assistant's voice already in the thread, extended to the whole UI: plain verbs, real numbers, nothing announced that doesn't exist.
 
-**Redesign status.** §1 Tokens and §2 Typography describe the new system (checkpoint 1). §3 Components and §4 Motion still describe the previous UI and are rewritten as each surface is rebuilt; where they conflict with §1–2, §1–2 win.
+**Redesign status.** §1 Tokens, §2 Typography, the header and footer, the composer, the contact sheet, error surfaces and §4 Motion are current (checkpoints 1–2). The fanned stack, auth modal, pricing, assets and badge entries still describe the previous UI and are rewritten as each surface is rebuilt; where they conflict, the current sections win.
 
 ## 1. Tokens
 
@@ -86,103 +86,41 @@ The old surface names (`bg-4`, `bg-5`, `chip`, `border-1..3`, the accent tints, 
 
 ## 3. Components
 
-**Promo banner:** 44px tall, full width, `--bg-1` background with a 1px `--border-1` bottom edge. Centered row: tag icon in `--accent`, 14/600 text in `--brand-gradient`, and a gradient button (26px tall, 10px horizontal padding, `--r-sm`, 12/600 `--accent-ink` text). A close X sits 16px from the right edge. Dismissal is stored in localStorage. Only one message at a time.
+**Composer (the bench):** the top of the studio column, never fixed. `--bg-1` panel, 1px `--line-2` ring, `--r-lg`, 16px padding.
+- **Prompt:** a textarea at 16/24, 3 lines at rest, growing to 10 (`field-sizing: content`, with a Firefox fallback). Enter submits, Shift+Enter breaks. A counter appears at 80% of the limit.
+- **Under the prompt:** the improver's status ("Improving…", then "Prompt improved" with an Undo link) and the character counter, in 12px `--text-2`. Below that, the **notice** slot (see Error surfaces).
+- **Settings row:** Model (icon, name, and its credit cost in `--text-2`), Aspect (a glyph and the ratio), Count ("1 image" between − and +), then, right-aligned, the wand and Generate. Chips are 36px, `--bg-2`, `--r-md`, no border; open or hover is `--bg-3`. Menus open downward: `--bg-1`, 1px `--line-2`, `--r-lg`, `--shadow-float`, 40px rows with a check on the selected one.
+- **Generate:** 40px, `--r-md`, `--brand-gradient`, `--accent-ink`, reading "Generate" and the cost as "2 credits" at 80%. It is the only gradient fill in the studio. Disabled: `--brand-gradient-muted`. Cost above balance: "Get more credits", which opens the modal. Full width below 640px.
+- **Meter row:** the balance as text, then the dot meter: one dot per credit of a new member's starting balance, filled dots sharing the logo gradient left to right, empty ones `--bg-3`. The fill is one clipped rect whose width animates 300ms, so a confirmed spend ticks the dots off.
+- **The wand:** a 36px `--bg-2` button. While the rewrite is in flight it shows a spinner and the textarea dims to 40%; the rewrite arrives whole and the textarea fades back. Undo restores the original.
+- **While a run is live:** the textarea stays editable so the next prompt can be written; chips drop to 50% and ignore clicks; Generate shows a spinner and "Generating…"; one request at a time.
 
-**Top nav:** 52px tall, `--bg-0`, no border. From the left:
-- Logo, 28px.
-- Up to 5 links, 14/500 in `--text-2`, 20px apart. The active link is `--accent-text`.
-- An optional "New" badge after a link: 16px tall, `--accent-badge-bg` fill, `--accent-text` 10/600 text, `--r-xs`.
-- On the right: Pricing pill, **credits pill** *(ours)*, then Login and Sign up.
-  - All buttons are 32px tall with `--r-md`. Login uses `--accent-tint-2` with `--accent-text`. Sign up uses `--brand-gradient` with `--accent-ink` text; hover is `brightness(1.1)`.
-  - Pricing pill: `--bg-3` fill. A "30% OFF" `--brand-pink` badge hangs below it, overlapping by −8px (9/700 `--accent-ink`, `--r-xs`).
-  - Credits pill: 32px tall, `--r-full`, `--bg-3` fill, 1px `--border-3`, 12px horizontal padding. Gradient sparkle icon, then the count in 14/600 tabular. At 0 credits the count turns `--danger`. Clicking it opens the auth modal (anonymous users) or Pricing (signed-in users).
-- Signed in, the avatar replaces Login and Sign up: 32px circle filled with `--brand-gradient`.
+**Contact sheet (the studio):** every Generate click is one frame, stacked newest-first under the composer, 40px apart, in the composer's 880px column. A run is a frame, not a message: no bubbles, no avatar, no narration.
+- **Days:** a rule with "Today", "Yesterday" or the date separates days. The first 8 runs render; "Show earlier (N more)" reveals 8 at a time. History images are lazy.
+- **Media:** images fill the column, capped at 70vh: one across, two side by side, three across at 60vh, four as two by two at 40vh. Tiles keep their true ratio, `--r-lg`, `--bg-1` under the image. Hover or focus shows the favourite heart and a download button top-right (`rgb(0 0 0 / .5)` + blur), always visible on touch. Click opens the lightbox.
+- **Caption row:** the prompt on the left in 14/20, clamped to two lines and expandable on click. On the right, in 12px `--text-2` tabular figures: the time (`--text-3`), model, aspect, seconds taken, credits used.
+- **Actions:** 32px `--bg-2` chips. Reuse on every finished frame. The newest finished frame also carries the three one-step variations with their cost (the other model, 4 takes or one, wide or vertical). A chip only loads the composer and scrolls it into view; it never generates.
+- **Pending frame:** the size the image will be, `--bg-1` with a 1px `--line-2` inset ring. Behind it the brand conic glow at 14–28% breathes on a 4s loop: the one thing that moves. Centred, the elapsed time ("3.2s", 14px tabular). At the bottom a 2px gradient estimate bar eased toward 95% from the model's typical time. The caption's facts slot carries the voice: "Rendering one frame at 16:9 with Flux Schnell."
+- **Resolve:** the glow stays until the bytes arrive, then the image fades in over 600ms. No blur, no scale.
+- **Failed frame:** same size, 1px `--danger` 30% inset ring, alert icon, the failure line ("Flux Dev couldn't finish this one. Your 6 credits are back.") and a Try again button. Retry adds a new run above; the failed frame collapses to a one-line record with its time.
+- **Voice:** built from real facts only (model, aspect, take count, time, credits, error codes; `assistant-lines.ts`). Wording is picked by hashing the run id. It speaks on pending frames, failures and rejections; finished runs speak through their facts row. Nothing describes image content, because nothing looked at the image.
+- **Ambient layer:** three static brand orbs plus film grain, fixed behind the page. Opacity 0 at rest, 60% while a run is live, 1s fade either way. Nothing drifts.
+- **Empty state:** the composer, one line ("Describe a scene and a real image comes back in seconds. 6 free credits, no signup."), three starter prompts as underlined text links, then "Start from a style" (the eight presets as a strip) and "Made with Flux" (the showcase grid with Recreate).
+- **Mobile:** the same column. Chips wrap, Generate goes full width, batches of four stay two by two. Nothing is fixed to the viewport.
 
-**Docked composer (Image):**
-- **Position:** fixed, 20px above the viewport bottom, centered, `max-width: 1120px`, 16px side margins. `--bg-2` background, 1px `--border-2`, `--r-2xl`, 20px padding.
-- **Depth *(ours)*:** results scroll underneath, so it uses `--shadow-dock` (black, on all sides: `0 -12px 40px /.6`, `0 16px 48px /.7`, a 1px black ring) instead of `--shadow-float`. A page-color scrim sits behind it (`--bg-0` → transparent, 176px, 240px on mobile) so images fade out rather than cut off at its edge. The inline composer on Explore keeps `--shadow-float` plus its glow.
-- **Grid:** two columns. The left column holds two rows; the right column is the Generate button.
-  - **Row 1:** a 32px square "+" button (`--bg-3`, `--r-md`), then an auto-growing textarea (15/22 text, `--text-placeholder` placeholder, 1–5 lines).
-  - **Row 2:** chips in this order: Model, Aspect, Batch stepper (− 1/4 +), 8px apart.
-  - **Generate:** 174×82 desktop (it spans both rows), `--r-xl`, `--brand-gradient`, `--lip`, hover `brightness(1.1)`. Content is "Generate" (16/600) + sparkle + the struck cost in `--accent-ink` at 50% + the real cost in 16/700.
-  - **Disabled** (empty prompt or request in flight): `--brand-gradient-muted`, no lip.
-  - **Cost higher than balance:** the label reads "Get more credits" and clicking opens the modal.
-- **Mobile (< 640px):** one column. The chips scroll horizontally, with a 40px `--bg-2` fade at the right edge so the row reads as scrollable, and Generate becomes full width and 52px tall.
-- **While a generation is in flight** *(ours)*. This runs from the click until the tile resolves, and covers the lazy sign-in too.
-  - The **textarea stays editable**, so the user can write the next prompt.
-  - **Chips drop to 50% opacity and ignore clicks.** Any open dropdown closes. The settings being used belong to the pending tile, so changing them mid-flight would be misleading.
-  - The **"+" button is disabled** the same way.
-  - **Generate** uses `--brand-gradient-muted` with no lip. Its label becomes a 16px spinner + "Generating…" (16/600). The cost is hidden.
-  - The whole composer border turns 1px `--accent` at 30% and pulses 30% → 60% on a 1.6s loop (static under reduced motion).
-  - **One request at a time.** Enter or a click during flight does nothing.
-  - **On success or failure** the composer is fully interactive again within 150ms. On failure it also keeps the prompt text.
+**Error surfaces:** a request the server rejects before spending is not a run. Its pending frame is removed and the composer shows a **notice** under the prompt: `--bg-2`, `--r-md`, an icon (`--danger` for a credits or network problem, `--text-2` for a lock), the line, and the action inline as an `--accent-text` link. Typing clears a non-blocking notice.
 
-**Chip + dropdown:**
-- **Chip:** 38px tall, 12px horizontal padding, `--chip` fill, 1px `rgb(255 255 255 / .06)` border, `--r-md`. 16px icon + 14/500 white label + optional chevron. Hover: `--bg-5`. Open: 1px `--accent` border at 40%.
-- **Dropdown:** a popover above the chip with an 8px gap. `--bg-1`, 1px `--border-3`, `--r-lg`, `--shadow-float`, 6px padding.
-  - Rows are 40px tall with `--r-md`.
-  - Model rows show a name (14/500), a 12px description in `--text-2`, and the credit cost aligned right.
-  - The selected row gets an `--accent-text` check. Locked rows are 50% opacity with a lock icon.
+| Code | Notice | Action | Composer | Credits |
+|---|---|---|---|---|
+| `INSUFFICIENT_CREDITS` | "Not enough credits…" (guest or member wording) + the auth modal opens (out-of-credits variant) | "Sign up for 20 credits" / "See plans" | Usable | Not charged |
+| `GLOBAL_CAP` | "Today's demo budget is used up…" | — | Locked until reload | Not charged |
+| `IP_LIMIT` (429) | "Your network has hit today's image limit…" | — | Locked until reload | Not charged |
+| `FAL_DISABLED` (503) | "Generation is paused…" | Try again (unlocks and retries) | Locked | Not charged |
+| Provider failure / timeout | Failed frame in the sheet | Try again | Usable | Refunded |
+| Network / unknown | "I couldn't reach the server…" | Try again | Usable | — |
 
-**Chat thread (Image) *(ours)*:** every Generate click is one chat turn: the visitor's message, then the assistant's reply. It reads oldest first, with the newest turn right above the composer. This replaces the flat tile grid, where one result looked like a lost thumbnail.
-- **Column:** the thread shares the composer's column exactly (1120px max, 16px gutters). Turns are 40px apart. A thread shorter than the viewport sits at the bottom, just above the composer.
-- **Scrolling:** starting a turn scrolls smoothly to the bottom, and loading history jumps straight to the newest. While a reply types, the thread sticks to the bottom only if the visitor is already within 160px of it.
-- **User bubble:**
-  - Right-aligned, max 88% (576px on desktop), `--bg-4` with a 1px white 5% ring, 16px radius with a 6px bottom-right corner, `12px 16px` padding.
-  - The prompt at 15/24. Under it, right-aligned tags (24px, black 25% fill, 12/500 `--text-2`): model (gradient sparkle), aspect, and "N images" when N > 1.
-  - Under the bubble: the time and a "Reuse" link (12px, `--text-3` / `--text-2`), shown on hover or focus and always on touch. Reuse loads the prompt and all its settings into the composer.
-- **Assistant reply:**
-  - A 32px `--bg-2` avatar with the logo mark. Its ring is `--accent` 60% while generating, `--border-2` otherwise.
-  - Then, one after another: the intro line → the media row → the closing line → the actions.
-  - Text is 15/24 at 90% white, max 672px.
-- **Voice:** templates filled with real facts only: model, aspect, take count, time taken, credits used and left, and error codes (`assistant-lines.ts`).
-  - About 8 intro phrasings, 5 "done" openers, 6 nudges, 4 failure lines, and one line per rejection code.
-  - It never describes image content, because nothing looked at the image.
-  - Wording is picked by hashing the run id, so a reload shows the same words.
-  - History turns omit "credits left", since only today's balance is known.
-- **Streaming (live turns only):** a 450ms beat with just the caret, then word by word at 30–60ms, with +110ms after `,` and `;` and +220ms after `.`, `!`, `?` and `:`. The caret is 3px wide, 1em tall, `--brand-gradient`, pulsing. The line is `aria-busy` while typing, and the list is `role="log"`. History and reduced motion render text whole.
-- **Actions (latest turn only):** 36px pill chips (`--bg-1`, 1px `--border-3`, hover border `--accent` 50%).
-  - After a result: three one-step variations, each showing its credit cost: the other model, 4 takes / one take, and vertical / wide. A chip only loads the composer; it never generates.
-  - After a rejection: "Sign up for 50 credits" (INSUFFICIENT_CREDITS) or "Try again" (FAL_DISABLED, network, unknown). A retry adds a new turn; the old one stays as a record.
-- **Media row sizing:**
-  - A run's images share one height, so a batch reads as a set. It's kept modest on purpose: clicking opens the full-size lightbox.
-  - The row is a CSS grid whose max width is `row-h × ratio × n + gaps`. Row height is `min(38vh, 360px)` for one image, then `min(32vh, 300px)` / `min(28vh, 260px)` / `min(26vh, 240px)` for 2 / 3 / 4.
-  - A batch of 4 is 2×2 below 640px.
-  - Tiles use `--r-xl`, keep their true aspect ratio, and are left-aligned under the assistant's text.
-- **Generating tile:**
-  - Behind: the logo colors as a conic gradient, blurred 64px at 30% and rotating over 7s, with each batch tile phase-shifted. The pending shimmer sweeps on top.
-  - Centered: a 24px gradient sparkle that breathes (scale .88↔1.08), "Generating" (14/500), and an elapsed "3.2s" counter (12px tabular).
-  - Bottom: a 2px gradient progress line. It's an estimate from the model's typical time (`estSeconds`), easing toward 95%, so it never claims done early.
-- **Finished tile:**
-  - The glow stays under the image until its bytes load, then the image resolves with the reveal.
-  - Hover: the image scales 1.015, and a 32px download button appears top-right (`rgb(0 0 0 / .5)` + blur). It's always visible on touch.
-  - Click opens the lightbox on `--overlay`.
-- **Failed tile:** same size as the image would be. `--bg-2` with a 1px `--danger` 25% inner ring, a 20px `--danger` icon, "Generation failed", "Your credits were refunded.", and a bordered "Try again" button.
-- **Ambient background *(ours)*:** a fixed layer behind the thread so the page isn't one flat color.
-  - Three soft radial orbs: violet (16% alpha, 60vmax, top-left), sky (12%, 55vmax, right), and pink→peach (12% / 5%, 65vmax, bottom). They drift and scale slowly (26s / 32s / 38s, alternating).
-  - Film grain on top: SVG fractal noise at 4.5%, overlay blend. It stops the dark gradients banding.
-  - **Tied to state:** at rest the layer is at 35% opacity, so the glow stays well under the content. While a generation is in flight it rises to 85% over 1s and breathes (100↔70% over 3.2s), then settles back when the run resolves.
-  - Radial falloff instead of a blur filter, so drifting stays cheap. Static under reduced motion. Image page only.
-- **Empty state:** the hero (fanned stack + headline), then 3 starter chips that fill the composer: "Lighthouse under the Milky Way", "Rainy neon alley", "Glass house in the snow".
-- **Under reduced motion:** no streaming, glow rotation, breathing, shimmer or reveal blur. Fades only.
-
-**Error surfaces *(ours)*:** every server error code maps to exactly one surface. On Image that surface is the thread itself.
-
-| Code | Surface | Composer | Credits |
-|---|---|---|---|
-| `INSUFFICIENT_CREDITS` | Assistant turn + the auth modal (out-of-credits variant) opens; a "Sign up for 50 credits" chip | Stays usable (a cheaper setting may fit) | Not charged |
-| `GLOBAL_CAP` | Assistant turn ("Today's demo budget is used up…") | Locked until reload | Not charged |
-| `IP_LIMIT` (429) | Assistant turn ("Your network has hit today's image limit…") | Locked until reload | Not charged |
-| `FAL_DISABLED` (503) | Assistant turn + "Try again" chip | Locked; "Try again" unlocks and retries | Not charged |
-| Provider failure / timeout | Failed tile + assistant line naming the refund | Usable | Refunded |
-| Network / unknown | Assistant turn + "Try again" chip | Usable | — |
-
-- **Toast:** for one-off notices outside the thread (e.g. "Prompt trimmed to 500 characters.", "Reference images are coming soon.").
-  - Placement: **top-center, 12px below the nav** (mobile: 12px below the top safe area). One at a time; a new toast replaces the old one.
-  - Size and shape: `max-width: 420px`, at least 44px tall, `12px 14px` padding, `--bg-1` fill, 1px `--border-3`, `--r-lg`, `--shadow-float`.
-  - Content: a 3px left accent bar in the tone color, a 16px icon, 14/500 text, an optional `--accent-text` text action.
-  - Dismissal: auto-dismisses after 5s (6s when it has an action). Hovering pauses the timer, and swiping up or clicking the X dismisses it.
-- **Accessibility:** the thread is `role="log"`, and typing lines are `aria-busy`. Toasts are in an `aria-live="polite"` region. Neither ever steals focus. Only the modal traps focus.
+- **Toast:** for one-off notices outside the sheet (e.g. "Prompt trimmed to 500 characters."). Top-center, 12px below the nav, one at a time, `--bg-1`, 1px `--line-2`, `--r-lg`, `--shadow-float`, a 3px tone bar, auto-dismiss in 5s (6s with an action), hover pauses.
+- **Accessibility:** the sheet is an ordered list labelled "Runs"; a pending frame is `role="status"`; the notice is `role="alert"`; the meter is decorative with the balance given as text. Only dialogs trap focus.
 
 **Fanned photo stack (empty states):**
 - **Arrangement:** four photos overlapping about 25%. Rotations are −8°, −3°, 0°, +6°, each lifted −4px. **The third photo is a circle**; the others are rounded squares with `--r-lg`.
@@ -250,35 +188,24 @@ The old surface names (`bg-4`, `bg-5`, `chip`, `border-1..3`, the accent tints, 
 - **Soft** (in nav): `--accent-badge-bg`/`--accent-text`, upright (not italic), 10/600.
 - **Category chip on tiles:** "Image"/"Video", 24px tall, `--bg-5` fill, `--r-md`, 12/500 `#d6d6d7`, with an icon.
 
-**Mobile bottom tab bar (< 768px):**
-- **Bar:** fixed, 64px tall + `env(safe-area-inset-bottom)` (the page sets `viewport-fit=cover`). `--tabbar` background, 1px `--border-1` top border. Its height is `--tabbar-h` (0 from md up); the body's bottom padding and the docked composer on Image clear it.
-- **Items *(ours)*:** Home, Community, **Create**, Assets, Pricing. Each is a 22px icon above an 11/500 label. Inactive items are `--text-2`, the active one `--text-1`. (The recon's Explore is our Home, and there's no Profile page.)
-- **Create:** a `--brand-gradient` button, 64×44, `--r-lg`, `--lip`, dark sparkle icon, no label, rising 6px above the bar. It opens /image with the composer focused (on /image it just focuses it). iOS won't raise the keyboard from a focus after navigation, so there the visitor taps the prompt once. The Create hub sheet from the recon is not built.
-- **Top bar below 768px:** logo, credits pill, Sign up, and a 32px menu button. The desktop link row is hidden; the menu opens a full-screen sheet (`--bg-1`) with the full nav list, Soon items included, 48px rows.
-
-**Page layout:** content max width 1440px, 16px gutters on mobile and 24px on desktop. On Image, results scroll behind the composer, with 180px of bottom padding so the last row stays visible.
+**Page layout:** the studio is an 880px column with 16px gutters; other pages keep 1440px max with 16/24px gutters until they are rebuilt.
 
 ## 4. Motion
 
-Easing: `--ease-out: cubic-bezier(.2,.8,.2,1)`.
+Easing: `--ease-out: cubic-bezier(.2,.8,.2,1)`. Rule: only things that are actually changing move. No scroll reveals, no hover lifts, no entrances, no typewriters.
 
 | What | Animation | Duration |
 |---|---|---|
 | Hover color/background | color, bg, border | 150ms ease |
-| Gradient button press | `translateY(1px)`, lip 3px → 1px | 80ms |
+| Menus, popovers, toasts | fade + 4–8px translate | 150–200ms |
 | Modal open / close | backdrop opacity; panel `scale(.96)→1` + fade | 220ms `--ease-out` / 150ms ease-in |
-| Popover / dropdown | fade + `translateY(4px)→0` | 150ms |
-| Auth carousel | auto-advance; bar fills linearly; image crossfade | 5s per slide / 400ms |
-| Pending shimmer | background-position sweep, infinite | 1.6s linear |
-| Result reveal | opacity 0→1 + `blur(20px)→0` + `scale(1.04)→1` | 700ms `--ease-out` |
-| Generating glow | conic brand gradient rotates 360°; sparkle breathes | 7s linear / 1.8s |
-| Fanned stack mount | from 0° to its final rotation, 60ms stagger; hover adds ±3° to the spread | 500ms `--ease-out` |
-| Credits change | number ticks down; at 0, pill pulses `--danger` twice | 300ms / 2 × 400ms |
-| Create hub (mobile) | `translateY(100%)→0` | 300ms `--ease-out` |
-| Banner dismiss | height 44→0 + fade | 200ms |
-| Composer in-flight border | accent border opacity 30% ↔ 60% | 1.6s loop |
-| Ambient orbs | drift + scale, alternate / layer 35%→85% + breathe while generating | 26–38s / 1s fade, 3.2s breathe |
-| Assistant text | word-by-word stream after a 450ms beat; gradient caret pulses | 30–60ms/word, +110/+220ms at punctuation |
-| Toast in / out | `translateY(-8px)→0` + fade / fade + `translateY(-4px)` | 200ms / 150ms |
+| Pending frame | conic glow breathes 14↔28% opacity, scale .96↔1.04 | 4s loop |
+| Estimate bar | scale-x toward 95% from the model's typical time | 100ms steps |
+| Resolve | image opacity 0→1 over the glow | 600ms ease-out (300ms for history) |
+| Ambient layer | opacity 0↔60% with the live state | 1s |
+| Dot meter | fill width to the new balance | 300ms ease-out |
+| Credits figure | number ticks to the new balance; at 0, pulses `--danger` twice | 300ms / 2 × 400ms |
+| Wand | spinner while the rewrite is in flight; textarea 40%↔100% | 200ms |
+| Auth carousel, fanned stack, Ken Burns (pages not yet rebuilt) | as before | — |
 
-With `prefers-reduced-motion: reduce`, keep only the opacity fades (≤150ms). No transforms, no shimmer (use a static `--bg-2`), no carousel auto-advance.
+With `prefers-reduced-motion: reduce`: opacity fades only (≤150ms), the glow is static, the meter jumps, no spinner rotation.

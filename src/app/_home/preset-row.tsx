@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useT } from "@/components/locale-provider";
 
 import { useHomeComposer } from "./home-composer";
-import { PRESETS, presetPrompt } from "./presets";
+import { PRESETS, presetPrompt } from "@/components/presets";
 import { Reveal } from "./reveal";
 
 export function PresetRow() {

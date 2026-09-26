@@ -38,8 +38,6 @@ export const ru: Partial<Record<MessageKey, string>> = {
   "footer.source": "Исходный код",
 
   // Composer
-  "composer.addReference": "Добавить референс",
-  "composer.referenceSoon": "Референсные изображения скоро появятся.",
   "composer.prompt": "Промпт",
   "composer.placeholder": "Опишите сцену, которую представляете",
   "composer.trimmed": "Промпт обрезан до {n} {n|one:символа|few:символов|many:символов}.",
@@ -120,15 +118,11 @@ export const ru: Partial<Record<MessageKey, string>> = {
   "authModal.back": "Вернуться назад",
 
   // /image
-  "image.heroTop": "Начните создавать",
-  "image.heroAccent": "настоящие ИИ-изображения",
-  "image.heroText": "Опишите сцену, персонажа, настроение или стиль — и увидите, как они оживают. {n} бесплатных кредитов, без регистрации.",
   "image.starters": "Попробуйте один из вариантов",
   "image.starter.lighthouse": "Маяк под Млечным Путём",
   "image.starter.alley": "Дождливый неоновый переулок",
   "image.starter.glass": "Стеклянный дом в снегу",
-  "thread.label": "Диалог",
-  "thread.images": "{n} {n|one:изображение|few:изображения|many:изображений}",
+  "thread.label": "Генерации",
   "thread.reuseTitle": "Загрузить этот промпт и настройки в редактор",
   "thread.reuse": "Повторить",
   "thread.seePlans": "Смотреть тарифы",
@@ -144,12 +138,6 @@ export const ru: Partial<Record<MessageKey, string>> = {
   "assistant.takes.many": "{n} {n|one:вариант|few:варианта|many:вариантов}",
   "assistant.intro": "Приступаю. {model} рисует {takes} в формате {aspect}.",
   "assistant.failed": "{model} не справилась с этим запросом. Кредиты ({cost}) возвращены.",
-  "assistant.done": "Готово за {time}.",
-  "assistant.doneNoTime": "Готово.",
-  "assistant.spent": "Потрачено кредитов: {cost}.",
-  "assistant.spentLast": "Потрачено кредитов: {cost}. Это были последние.",
-  "assistant.spentLeft": "Потрачено кредитов: {cost}. Осталось: {left}.",
-  "assistant.nudge": "Сделать вариацию?",
   "assistant.reject.creditsMember":
     "Нужно кредитов: {cost}, а у вас осталось меньше. Тариф пополнит баланс; ваши изображения останутся здесь.",
   "assistant.reject.creditsGuest":
@@ -319,4 +307,13 @@ export const ru: Partial<Record<MessageKey, string>> = {
   "assistant.err.session": "сессия истекла. Обновите страницу, чтобы начать новую.",
   "assistant.err.invalid": "запрос не прошёл проверку.",
   "assistant.err.internal": "на нашей стороне что-то пошло не так.",
+  "thread.today": "Сегодня",
+  "thread.yesterday": "Вчера",
+  "thread.showEarlier": "Показать предыдущие (ещё {n})",
+  "run.time": "Время",
+  "run.status": "Статус",
+  "run.took": "Заняло",
+  "run.cost": "Стоимость",
+  "composer.images": "{n} {n|one:изображение|few:изображения|many:изображений}",
+  "image.empty": "Опишите сцену — настоящее изображение появится за секунды. {n} бесплатных кредитов, без регистрации.",
 };

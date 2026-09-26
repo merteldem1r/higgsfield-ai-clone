@@ -5,18 +5,19 @@ export type { GenerateRequest };
 // id is missing only if the server couldn't read it back after saving; that image just shows no heart.
 export type RunImage = { id?: string; url: string; width: number | null; height: number | null; favourite: boolean };
 
-// One click of Generate, rendered as one chat turn: the user's bubble, then the assistant's reply.
-// "rejected" means the API turned it down before spending (budget, IP limit, credits, network).
+// One click of Generate, shown as one frame. Requests the API rejected before spending anything never
+// become runs: they're shown as a notice in the composer instead.
 export type Run = {
   id: string;
   request: GenerateRequest;
-  status: "pending" | "done" | "failed" | "rejected";
+  status: "pending" | "done" | "failed";
   startedAt: number;
   completedAt?: number;
   images: RunImage[];
-  /** Balance right after this run. Only known for runs made in this page visit. */
-  creditsLeft?: number;
-  /** Created in this page visit, so its reply streams in; history renders instantly. */
+  /** Created in this page visit: its image crossfades in on arrival; history renders as it loads. */
   live: boolean;
-  rejection?: { code: string; message: string };
+  /** A failed run that has been retried collapses to a one-line record. */
+  retried?: boolean;
 };
+
+export type Rejection = { code: string; message: string; request: GenerateRequest };

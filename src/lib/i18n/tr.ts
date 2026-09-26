@@ -35,8 +35,6 @@ export const tr: Partial<Record<MessageKey, string>> = {
   "footer.source": "Kaynak kod",
 
   // Composer
-  "composer.addReference": "Referans görsel ekle",
-  "composer.referenceSoon": "Referans görseller yakında geliyor.",
   "composer.prompt": "İstem",
   "composer.placeholder": "Hayal ettiğin sahneyi anlat",
   "composer.trimmed": "İstem {n} karaktere kısaltıldı.",
@@ -117,15 +115,11 @@ export const tr: Partial<Record<MessageKey, string>> = {
   "authModal.back": "Kaldığım yere dön",
 
   // /image
-  "image.heroTop": "Oluşturmaya başla:",
-  "image.heroAccent": "gerçek yapay zekâ görselleri",
-  "image.heroText": "Bir sahne, karakter, duygu ya da stil anlat ve hayat bulmasını izle. {n} ücretsiz kredi, kayıt gerekmez.",
   "image.starters": "Bunlardan birini dene",
   "image.starter.lighthouse": "Samanyolu altında deniz feneri",
   "image.starter.alley": "Yağmurlu neon sokak",
   "image.starter.glass": "Karda cam ev",
-  "thread.label": "Sohbet",
-  "thread.images": "{n} görsel",
+  "thread.label": "Üretimler",
   "thread.reuseTitle": "Bu istemi ve ayarlarını oluşturucuya yükle",
   "thread.reuse": "Yeniden kullan",
   "thread.seePlans": "Planları gör",
@@ -141,12 +135,6 @@ export const tr: Partial<Record<MessageKey, string>> = {
   "assistant.takes.many": "{n} deneme",
   "assistant.intro": "Başlıyorum. {model} ile {aspect} oranında {takes} oluşturuluyor.",
   "assistant.failed": "{model} bunu tamamlayamadı. {cost} kredin iade edildi.",
-  "assistant.done": "{time} içinde hazır.",
-  "assistant.doneNoTime": "Hazır.",
-  "assistant.spent": "Bu işlem {cost} kredi harcadı.",
-  "assistant.spentLast": "Bu işlem {cost} kredi harcadı; bakiyendeki son krediler buydu.",
-  "assistant.spentLeft": "Bu işlem {cost} kredi harcadı. {left} kredin kaldı.",
-  "assistant.nudge": "Bir varyasyon ister misin?",
   "assistant.reject.creditsMember":
     "Bunun için {cost} kredi gerekiyor, kalan kredinden fazla. Bir plan bakiyeni doldurur; görsellerin burada kalır.",
   "assistant.reject.creditsGuest":
@@ -315,4 +303,13 @@ export const tr: Partial<Record<MessageKey, string>> = {
   "assistant.err.session": "oturumunun süresi doldu. Yenisini başlatmak için sayfayı yenile.",
   "assistant.err.invalid": "istek doğrulamadan geçemedi.",
   "assistant.err.internal": "bizim tarafımızda bir sorun oluştu.",
+  "thread.today": "Bugün",
+  "thread.yesterday": "Dün",
+  "thread.showEarlier": "Öncekileri göster ({n} tane daha)",
+  "run.time": "Saat",
+  "run.status": "Durum",
+  "run.took": "Süre",
+  "run.cost": "Maliyet",
+  "composer.images": "{n} görsel",
+  "image.empty": "Bir sahne betimle; gerçek bir görsel saniyeler içinde gelsin. {n} ücretsiz kredi, kayıt yok.",
 };

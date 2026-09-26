@@ -3,9 +3,10 @@ import type { Locale, MessageKey, T } from "@/lib/i18n";
 
 import type { GenerateRequest, Run } from "./types";
 
-// The assistant's voice. Every line is built from facts we actually have (settings, timing, credits,
-// error codes). Nothing here describes image content: nothing looked at the image, so it can't claim to.
-// Wording is picked by hashing the run id, so a reload shows the same reply.
+// The studio's voice, kept for the moments that need a sentence: a run in progress, a failure, a refund,
+// a request the server turned down. Finished runs speak through their facts row instead.
+// Every line is built from facts we actually have. Nothing describes image content: nothing looked at it.
+// Wording is picked by hashing the run id, so a reload shows the same line.
 // The varied wording is English-only; other locales get one translated line per slot.
 
 function hash(text: string): number {
@@ -30,7 +31,11 @@ function takes({ batch }: GenerateRequest): string {
   return batch === 1 ? "one frame" : `${batch} takes`;
 }
 
-export function introLine(run: Run, locale: Locale, t: T): string {
+function capital(text: string): string {
+  return text[0].toUpperCase() + text.slice(1);
+}
+
+export function pendingLine(run: Run, locale: Locale, t: T): string {
   const req = run.request;
   const model = MODELS[req.model].label;
   if (locale !== "en") {
@@ -40,90 +45,35 @@ export function introLine(run: Run, locale: Locale, t: T): string {
   const shape = ORIENTATION[req.aspect];
   return pick(
     [
-      `On it. Rendering ${takes(req)} at ${req.aspect} with ${model}.`,
-      `Got it. ${model} is working on ${takes(req)}, ${shape}.`,
-      `Sending this to ${model}: ${takes(req)} at ${req.aspect}.`,
-      `Starting now. ${takes(req)[0].toUpperCase()}${takes(req).slice(1)}, ${shape}, on ${model}.`,
-      `Let's see it. Rendering ${takes(req)} in ${req.aspect} with ${model}.`,
-      `${model} is on it. ${takes(req)[0].toUpperCase()}${takes(req).slice(1)} at ${req.aspect}, coming right up.`,
+      `Rendering ${takes(req)} at ${req.aspect} with ${model}.`,
+      `${model} is working on ${takes(req)}, ${shape}.`,
+      `${capital(takes(req))}, ${shape}, on ${model}.`,
       `Rendering ${takes(req)} now. ${model}, ${shape} frame.`,
-      `Queued on ${model}. ${takes(req)[0].toUpperCase()}${takes(req).slice(1)}, ${req.aspect}.`,
+      `Queued on ${model}. ${capital(takes(req))}, ${req.aspect}.`,
     ],
     `${run.id}:intro`,
   );
 }
 
-function seconds(run: Run): string | null {
-  if (!run.completedAt) return null;
-  return `${Math.max((run.completedAt - run.startedAt) / 1000, 0.1).toFixed(1)}s`;
-}
-
-export function outroLine(run: Run, locale: Locale, t: T): string {
+export function failureLine(run: Run, locale: Locale, t: T): string {
   const req = run.request;
   const model = MODELS[req.model].label;
   const cost = batchCost(req.model, req.batch).credits;
-  const time = seconds(run);
-  const many = run.images.length > 1;
-
-  if (locale !== "en") {
-    if (run.status === "failed") return t("assistant.failed", { model, cost });
-    const done = time ? t("assistant.done", { time }) : t("assistant.doneNoTime");
-    const spent =
-      run.creditsLeft === undefined
-        ? t("assistant.spent", { cost })
-        : run.creditsLeft === 0
-          ? t("assistant.spentLast", { cost })
-          : t("assistant.spentLeft", { cost, left: run.creditsLeft });
-    return `${done} ${spent} ${t("assistant.nudge")}`;
-  }
-
-  if (run.status === "failed") {
-    return pick(
-      [
-        `${model} couldn't finish this one. Your ${cost} credits are back.`,
-        `That one failed on the provider's side. I refunded your ${cost} credits.`,
-        `Something went wrong while rendering, so nothing was charged. Your ${cost} credits are back.`,
-        `No image this time; the render didn't complete. The ${cost} credits went back to your balance.`,
-      ],
-      `${run.id}:failed`,
-    );
-  }
-
-  const spent =
-    run.creditsLeft === undefined
-      ? `That used ${cost} credits.`
-      : run.creditsLeft === 0
-        ? `That used ${cost} credits, the last of your balance.`
-        : `That used ${cost} credits. You have ${run.creditsLeft} left.`;
-
-  const done = pick(
+  if (locale !== "en") return t("assistant.failed", { model, cost });
+  return pick(
     [
-      time ? `Done in ${time}.` : "Done.",
-      time ? `${many ? "Here they are" : "Here it is"}, ${time} on ${model}.` : `${many ? "Here they are" : "Here it is"}.`,
-      time ? `Finished in ${time}.` : "Finished.",
-      time ? `Rendered in ${time}.` : "Rendered.",
-      time ? `${many ? "All set" : "Ready"} after ${time}.` : `${many ? "All set" : "Ready"}.`,
+      `${model} couldn't finish this one. Your ${cost} credits are back.`,
+      `That one failed on the provider's side. Your ${cost} credits were refunded.`,
+      `The render didn't complete, so nothing was charged. Your ${cost} credits are back.`,
+      `No image this time. The ${cost} credits went back to your balance.`,
     ],
-    `${run.id}:done`,
+    `${run.id}:failed`,
   );
-  const nudge = pick(
-    [
-      "Want to push it further?",
-      "Want a variation?",
-      "Where should we take it next?",
-      "Try a different angle?",
-      "Want to change the frame?",
-      "Keep going?",
-    ],
-    `${run.id}:nudge`,
-  );
-  return `${done} ${spent} ${nudge}`;
 }
 
-// Turns the API rejected before spending anything. Worded as the assistant, not as an error dialog.
-export function rejectionLine(run: Run, locale: Locale, t: T, member = false): string {
-  const code = run.rejection?.code ?? "UNKNOWN";
-  const cost = batchCost(run.request.model, run.request.batch).credits;
+// A request the API rejected before spending anything. Shown in the composer, next to the way out.
+export function rejectionLine(code: string, message: string, request: GenerateRequest, locale: Locale, t: T, member = false): string {
+  const cost = batchCost(request.model, request.batch).credits;
   switch (code) {
     case "INSUFFICIENT_CREDITS":
       return member
@@ -138,14 +88,13 @@ export function rejectionLine(run: Run, locale: Locale, t: T, member = false): s
     case "NETWORK":
       return t("assistant.reject.network");
     default:
-      return t("assistant.reject.unknown", { message: fallbackMessage(run, locale, t) });
+      return t("assistant.reject.unknown", { message: fallbackMessage(code, message, locale, t) });
   }
 }
 
 // The API's messages are English (it's curl-tested as is), so other locales get a translated stand-in by code.
-function fallbackMessage(run: Run, locale: Locale, t: T): string {
-  const code = run.rejection?.code;
-  if (locale === "en" && run.rejection?.message) return run.rejection.message;
+function fallbackMessage(code: string, message: string, locale: Locale, t: T): string {
+  if (locale === "en" && message) return message;
   if (code === "UNAUTHENTICATED" || code === "NO_PROFILE") return t("assistant.err.session");
   if (code === "INVALID_INPUT") return t("assistant.err.invalid");
   if (code === "INTERNAL" || code === "NOT_PENDING") return t("assistant.err.internal");
@@ -154,7 +103,7 @@ function fallbackMessage(run: Run, locale: Locale, t: T): string {
 
 export type FollowUp = { label: string; request: GenerateRequest; cost: number };
 
-// Three one-step variations of the last run. Each only loads the composer; nothing generates or spends.
+// Three one-step variations of a run. Each only loads the composer; nothing generates or spends.
 export function followUps(req: GenerateRequest, t: T): FollowUp[] {
   const tall = req.aspect === "9:16" || req.aspect === "3:4";
   const variants: { key: MessageKey; change: Partial<GenerateRequest> }[] = [
